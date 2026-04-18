@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>食品效期助手</title>
+    <title>食品效期助手 V9.0</title>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
@@ -47,14 +47,12 @@
         .menu-item label.section-title { font-weight: bold; color: var(--primary); display: block; margin-bottom: 10px; font-size: 15px; }
         .menu-item label { font-size: 13px; color: var(--sub); display: block; margin-bottom: 5px; }
 
-        /* 备份信息 */
         .backup-slots { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
         .backup-slot { background: #f5f5f5; border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
         .backup-slot-info { color: #555; }
         .backup-slot-time { color: #aaa; font-size: 11px; }
         .backup-restore-btn { font-size: 12px; color: var(--blue); background: none; border: none; cursor: pointer; padding: 2px 6px; }
 
-        /* 分类管理 */
         .cat-add-row { display: flex; gap: 6px; margin-bottom: 10px; }
         .cat-add-row input { flex: 1; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; background: #fafafa; }
         .cat-add-row button { padding: 8px 10px; background: var(--primary); color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
@@ -68,76 +66,130 @@
         .view-section { display: none; padding: 12px 15px; max-width: 600px; margin: 0 auto; animation: fadeIn .3s; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; } }
-        .card { background: var(--card); border-radius: 12px; padding: 18px; margin-bottom: 14px; border: 1px solid var(--border); }
-
-        /* 自动补全 */
+        
         .autocomplete-wrapper { position: relative; }
         .suggestions-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid var(--primary); border-radius: 8px; z-index: 2000; max-height: 200px; overflow-y: auto; display: none; box-shadow: 0 4px 15px rgba(0,0,0,.1); }
         .suggestion-item { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; font-size: 15px; cursor: pointer; color: #222; }
         .suggestion-item:active { background: #f5f5f5; }
 
-        /* 表单 */
         .search-container { position: relative; margin-bottom: 14px; }
         .search-container input { padding-left: 35px; border-radius: 20px; border-color: var(--primary); }
         .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 16px; }
         input, select { width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background: #fafafa; }
         input:focus, select:focus { border-color: var(--primary); background: #fff; }
+        input[type="checkbox"] { width: auto; padding: 0; margin: 0; }
         .form-group { margin-bottom: 14px; }
         .duration-input { display: flex; gap: 8px; }
         .duration-input > * { flex: 1; }
 
-        /* 按钮 */
         .btn { padding: 11px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; display: inline-block; width: 100%; font-size: 15px; }
         .btn-primary  { background: var(--primary); color: #fff; }
         .btn-outline  { background: none; border: 1px solid #ccc; color: var(--txt); }
         .btn-blue     { background: var(--blue); color: #fff; }
         .btn-danger   { background: none; border: 1px solid #ffcdd2; color: #d32f2f; }
 
-        /* 工具栏 */
-        .list-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 4px; flex-wrap: wrap; gap: 8px; }
-        .list-toolbar h3 { font-size: 15px; margin: 0; }
-        .toolbar-actions { display: flex; gap: 6px; align-items: center; }
-        .toolbar-actions select, .toolbar-actions button { padding: 6px 8px; font-size: 13px; border-radius: 6px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
-        #sortOrderBtn { width: 32px; padding: 6px 0; text-align: center; background: #f0f0f0; }
+        .list-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 4px; flex-wrap: wrap; gap: 8px; }
+        .list-toolbar h3 { font-size: 14px; margin: 0; color: #555; font-weight: 600; }
+        .toolbar-actions { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+        .toolbar-actions select, .toolbar-actions button { padding: 5px 8px; font-size: 12px; border-radius: 6px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
+        .toolbar-actions button.tool-btn-disabled { color: #bbb; background: #f5f5f5; cursor: default; }
+        #sortOrderBtn { width: 28px; padding: 5px 0; text-align: center; background: #f0f0f0; }
 
         .batch-panel { background: #e3f2fd; padding: 10px 14px; border-radius: 8px; display: none; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 
+        /* ── V9.0.2 浮动添加按钮 FAB ── */
+        /* 只在库存 tab active 时可见;view-section 非 active 时 display:none,
+           fixed 子元素也会跟着隐藏 */
+        .fab-add {
+            position: fixed; right: 18px; bottom: 88px; z-index: 50;
+            width: 56px; height: 56px; border-radius: 50%;
+            background: var(--primary); color: #fff;
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 300; line-height: 1;
+            box-shadow: 0 4px 12px rgba(76,175,80,.35), 0 2px 4px rgba(0,0,0,.1);
+            transition: transform .15s, box-shadow .15s;
+        }
+        .fab-add:active { transform: scale(.92); box-shadow: 0 2px 6px rgba(76,175,80,.3); }
+
         /* ── 商品卡片 ── */
-        .item { padding: 14px; border-radius: 10px; margin-bottom: 12px; position: relative; border: 1px solid var(--border); background: #fff; display: flex; flex-direction: column; overflow: hidden; padding-left: 21px; }
-        .item::before { content: ''; position: absolute; left: 0; top: 0; width: 6px; height: 100%; background: #ccc; transition: background .3s; }
+        .item { padding: 12px 14px 12px 18px; border-radius: 10px; margin-bottom: 10px; position: relative; border: 1px solid var(--border); background: #fff; display: flex; flex-direction: column; overflow: hidden; transition: filter 0.2s, opacity 0.2s; }
+        .item::before { content: ''; position: absolute; left: 0; top: 0; width: 5px; height: 100%; background: #ccc; transition: background .3s; }
         .item.ok::before, .item.warn::before { background: linear-gradient(to bottom, #4CAF50 calc(100% - var(--progress) - 20%), #FFB300 calc(100% - var(--progress) + 20%)); }
         .item.expired::before { background: #F44336; }
         .item.warn    { background: var(--warn-bg); }
         .item.expired { background: var(--exp-bg); }
-        
-        /* 待填写状态卡片颜色（灰色调） */
         .item.pending { background: #f9f9f9; border-color: #e0e0e0; }
         .item.pending::before { background: #cfcfcf; }
-        
-        .item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-        .item-title-wrapper { display: flex; align-items: center; gap: 10px; }
-        .item-checkbox { display: none; width: 20px; height: 20px; accent-color: var(--primary); }
-        .item-title { font-weight: bold; font-size: 16px; color: #222; }
-        .item-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+        .item.withdrawn { background: #fcfcfc; border-color: #eaeaea; }
+        .item.withdrawn::before { background: #d0d0d0; }
+        .item.withdrawn .item-title { color: #888; }
+        .item.withdrawn .item-expiry { color: #999; }
+        .item.withdrawn .countdown-badge { background: #f5f5f5; color: #999; }
+        .item.withdrawn .item-details, .item.withdrawn .barcode-display { color: #aaa; }
+
+        .item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; gap: 8px; }
+        .item-title-wrapper { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .item-checkbox { display: none; width: 20px; height: 20px; accent-color: var(--primary); flex-shrink: 0; }
+        .item-title { font-weight: bold; font-size: 15px; color: #222; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
         .tag { padding: 2px 6px; border-radius: 4px; font-size: 11px; background: #eee; color: #555; }
         .tag.qty-tag { background: #e3f2fd; color: #1565c0; }
-        .item-details { font-size: 13px; color: #555; }
-        .item-expiry { font-size: 14px; font-weight: bold; margin-top: 5px; display: flex; align-items: center; gap: 8px; }
+        .item-details { font-size: 12px; color: #666; margin-bottom: 2px; }
+        .item-expiry { font-size: 13px; font-weight: 600; margin-top: 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .item.warn .item-expiry    { color: var(--warn-txt); }
         .item.expired .item-expiry { color: var(--exp-txt); }
         .item.pending .item-expiry { color: #777; font-weight: normal; }
-        
-        .countdown-badge { font-size: 12px; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
+
+        .countdown-badge { font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
         .countdown-ok   { background: #e8f5e9; color: #2e7d32; }
         .countdown-warn { background: #fff3e0; color: #e65100; }
         .countdown-exp  { background: #ffebee; color: #c62828; }
-        .item-btns { display: flex; gap: 8px; margin-top: 11px; }
-        .btn-sm { padding: 6px; font-size: 13px; width: auto; flex: 1; }
-        .status-badge { padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; flex-shrink: 0; }
+
+        /* ── 商品卡片按钮（已迁移至新布局，保留空规则供兼容） ── */
+        .item-btns { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .status-badge { padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; flex-shrink: 0; }
+
 
         #chartContainer { width: 100%; height: 300px; background: #fff; border-radius: 12px; margin-bottom: 14px; border: 1px solid var(--border); display: none; padding: 10px 0; }
 
-        /* 底部导航 */
+        /* ── 商品库卡片 ── */
+        .cat-card { padding: 14px; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); background: #fff; }
+        .cat-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; gap: 10px; }
+        .cat-card-title { font-weight: bold; font-size: 16px; color: #222; flex: 1; word-break: break-all; }
+        .cat-card-life-badge { background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+        .cat-card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+        .cat-card-barcode { font-size: 11px; color: #aaa; font-family: monospace; margin-top: 2px; margin-bottom: 6px; }
+        .cat-card-stats { font-size: 13px; color: #555; margin-bottom: 10px; }
+        .cat-card-stats .no-batch { color: #aaa; font-style: italic; }
+        .cat-card-btns { display: flex; gap: 8px; }
+
+        /* ── modal 表单 ── */
+        .form-modal-card { background: #fff; width: 92%; max-width: 420px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25); transform: scale(.95); transition: .2s; display: flex; flex-direction: column; max-height: 90vh; }
+        .modal-overlay-ui.active .form-modal-card { transform: scale(1); }
+        .form-modal-header { padding: 14px 18px 12px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .form-modal-header h3 { font-size: 16px; }
+        .form-modal-close { background: none; border: none; font-size: 20px; color: #999; cursor: pointer; padding: 2px 6px; line-height: 1; }
+        .form-modal-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+        .form-modal-footer { padding: 12px 18px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px; flex-shrink: 0; }
+        .form-hint { font-size: 11px; color: #888; margin-top: 4px; line-height: 1.4; }
+        .form-hint-snapshot { color: #1565c0; background: #e3f2fd; padding: 5px 8px; border-radius: 5px; margin-top: 4px; }
+
+        .batch-product-picker { padding: 11px; border: 1px solid #ccc; border-radius: 8px; background: #fafafa; display: flex; align-items: center; gap: 8px; cursor: pointer; min-height: 46px; }
+        .batch-product-picker.selected { background: #f0f9f0; border-color: var(--primary); }
+        .batch-product-picker .picker-hint { color: #999; font-size: 14px; flex: 1; }
+        .batch-product-picker .picker-name { font-weight: 600; color: #222; font-size: 15px; flex: 1; }
+        .batch-product-picker .picker-meta { font-size: 11px; color: #888; margin-top: 2px; }
+        .batch-product-picker .picker-arrow { color: #bbb; flex-shrink: 0; }
+
+        .catalog-search-modal-body { display: flex; flex-direction: column; gap: 10px; }
+        .catalog-search-result { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .catalog-pick-item { padding: 10px 12px; border: 1px solid #eee; border-radius: 8px; cursor: pointer; background: #fff; }
+        .catalog-pick-item:active { background: #f5f5f5; }
+        .catalog-pick-name { font-weight: 600; color: #222; font-size: 14px; }
+        .catalog-pick-meta { font-size: 11px; color: #888; margin-top: 2px; }
+        .catalog-pick-empty { text-align: center; color: #aaa; padding: 30px 0; font-size: 13px; }
+
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,.05); z-index: 900; border-top: 1px solid #eaeaea; }
         .nav-item { flex: 1; text-align: center; padding: 11px 0; font-size: 12px; color: #888; cursor: pointer; transition: .2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-item .icon { font-size: 20px; }
@@ -155,7 +207,6 @@
         .modal-card p  { margin-bottom: 20px; color: #666; font-size: 14px; line-height: 1.5; }
         .modal-btns { display: flex; gap: 12px; }
 
-        /* ── 导入确认弹窗 ── */
         .import-modal-card { background: #fff; width: 92%; max-width: 400px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25); transform: scale(.95); transition: .2s; display: flex; flex-direction: column; max-height: 88vh; }
         .modal-overlay-ui.active .import-modal-card { transform: scale(1); }
         .import-modal-header { padding: 16px 18px 12px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
@@ -170,10 +221,7 @@
         .import-mode-group label.mode-title { font-size: 13px; color: var(--sub); display: block; margin-bottom: 8px; }
         .import-radio-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 2px solid #eee; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s; }
         .import-radio-item.selected { border-color: var(--primary); background: #f0f9f0; }
-        
-        /* 修改的重点：防止全局 input 100% 宽度影响 radio 单选框 */
         .import-radio-item input[type=radio] { margin-top: 2px; accent-color: var(--primary); flex-shrink: 0; width: 18px; height: 18px; padding: 0; }
-        
         .import-radio-label { flex: 1; }
         .import-radio-name { font-size: 14px; font-weight: 600; color: #222; }
         .import-radio-desc { font-size: 12px; color: #888; margin-top: 2px; }
@@ -187,7 +235,6 @@
         .import-preview-table tr.bad-row td { color: #bbb; }
         .import-modal-footer { padding: 12px 18px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px; flex-shrink: 0; }
 
-        /* ── 门店选择器 ── */
         .store-picker-card { background: #fff; width: 92%; max-width: 380px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25); transform: scale(.95); transition: .2s; max-height: 85vh; display: flex; flex-direction: column; }
         .modal-overlay-ui.active .store-picker-card { transform: scale(1); }
         .store-picker-header { padding: 16px 18px 12px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
@@ -211,7 +258,6 @@
         .store-add-row input:focus { border-color: var(--primary); background: #fff; outline: none; }
         .store-add-btn { padding: 9px 13px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
 
-        /* Toast */
         .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.76); color: #fff; padding: 10px 22px; border-radius: 22px; font-size: 14px; z-index: 3000; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; max-width: 84vw; text-align: center; }
         .toast.show { opacity: 1; }
 
@@ -238,7 +284,6 @@
         .scanner-ft-text.success  { color: #4CAF50; font-weight: 600; }
         .scanner-ft-text.error    { color: #ef5350; }
 
-        /* API 设置区 */
         .api-platform-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
         .api-platform-row select { flex: 1; font-size: 13px; padding: 7px 8px; }
         .api-key-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
@@ -252,10 +297,8 @@
         .api-field-label { font-size: 11px; color: #999; margin-bottom: 3px; display: block; }
         .api-eye-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 15px; color: #bbb; padding: 4px; line-height: 1; }
 
-        /* 产品条形码字段 */
         .barcode-display { font-size: 11px; color: #aaa; font-family: monospace; margin-top: 2px; }
 
-        /* ── 内嵌扫码按钮（搜索框风格） ── */
         .scan-input-wrapper { position: relative; }
         .scan-input-wrapper input { padding-right: 50px; }
         .scan-trigger-btn {
@@ -267,10 +310,126 @@
             transition: background .15s, transform .1s;
         }
         .scan-trigger-btn:active { background: var(--primary-dk); transform: translateY(-50%) scale(.93); }
-
-        /* 查询中 loading 动点 */
         .lookup-dots::after { content: ''; animation: dots 1.2s infinite; }
         @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+        /* ── 左滑删除 ── */
+        .swipe-row { position: relative; overflow: hidden; border-radius: 10px; margin-bottom: 10px; }
+        .swipe-row > .cat-card,
+        .swipe-row > .item {
+            margin-bottom: 0; border-radius: 10px;
+            transition: transform .25s cubic-bezier(.25,.46,.45,.94);
+            will-change: transform; position: relative; z-index: 1;
+        }
+        .swipe-row.swiping > .cat-card,
+        .swipe-row.swiping > .item { transition: none; }
+        .swipe-delete-bg {
+            position: absolute; right: 0; top: 0; bottom: 0; width: 80px;
+            background: #F44336; color: #fff; border-radius: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 2px; cursor: pointer; z-index: 0;
+        }
+        .swipe-delete-bg .del-icon { font-size: 18px; line-height: 1; }
+        .swipe-delete-bg .del-txt  { font-size: 12px; font-weight: 600; }
+
+        /* ── 商品库卡片 按钮新布局 ── */
+        .cat-card-btns {
+            display: flex; justify-content: space-between; align-items: center; margin-top: 6px;
+        }
+        .cat-edit-link {
+            background: none; border: none; color: #888; font-size: 13px;
+            cursor: pointer; padding: 5px 2px; display: flex; align-items: center; gap: 3px;
+        }
+        .cat-edit-link:active { opacity: .6; }
+        .cat-new-batch-pill {
+            background: var(--primary); color: #fff; border: none; border-radius: 20px;
+            padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+            white-space: nowrap; box-shadow: 0 2px 8px rgba(76,175,80,.28);
+            transition: transform .1s, box-shadow .1s;
+        }
+        .cat-new-batch-pill:active { background: var(--primary-dk); transform: scale(.95); box-shadow: 0 1px 4px rgba(76,175,80,.2); }
+
+        /* ── 库存卡片 按钮新布局 ── */
+        .item-btns-left { display: flex; align-items: center; gap: 12px; }
+        .item-txt-link {
+            background: none; border: none; color: #888; font-size: 13px;
+            cursor: pointer; padding: 4px 0; display: flex; align-items: center; gap: 3px;
+        }
+        .item-txt-link:active { opacity: .6; }
+        .item-copy-pill {
+            background: var(--primary); color: #fff; border: none; border-radius: 20px;
+            padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+            white-space: nowrap; box-shadow: 0 2px 6px rgba(76,175,80,.25);
+            transition: transform .1s;
+        }
+        .item-copy-pill:active { background: var(--primary-dk); transform: scale(.95); }
+        .item-restore-pill {
+            background: var(--blue); color: #fff; border: none; border-radius: 20px;
+            padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+            white-space: nowrap; transition: transform .1s;
+        }
+        .item-restore-pill:active { opacity: .85; transform: scale(.95); }
+
+        /* ── 库存顶栏：单行精简 ── */
+        .inv-toolbar-row {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 8px; margin-bottom: 8px; flex-wrap: nowrap;
+        }
+        .inv-filter-chips { display: flex; gap: 6px; flex-shrink: 0; }
+        .inv-chip {
+            background: #f0f0f0; border: none; border-radius: 20px;
+            padding: 5px 11px; font-size: 12px; color: #555; cursor: pointer;
+            white-space: nowrap; font-weight: 500; transition: background .15s, color .15s;
+        }
+        .inv-chip.chip-active-blue { background: #e3f2fd; color: #1565c0; }
+        .inv-chip.tool-btn-disabled { color: #bbb; }
+        .inv-toolbar-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        .inv-icon-btn {
+            background: none; border: 1px solid #ddd; border-radius: 7px;
+            padding: 5px 8px; font-size: 14px; cursor: pointer; color: #555; line-height: 1;
+        }
+        .inv-icon-btn:active { background: #f5f5f5; }
+        .inv-icon-btn.chip-active-blue { background: #e3f2fd; border-color: #90caf9; }
+        .sort-chip-btn {
+            background: none; border: 1px solid #ddd; border-radius: 7px;
+            padding: 5px 9px; font-size: 12px; color: #444; cursor: pointer;
+            white-space: nowrap; display: flex; align-items: center; gap: 2px; font-weight: 500;
+        }
+        .sort-chip-btn:active { background: #f5f5f5; }
+        .inv-count-row { padding: 0 2px; margin-bottom: 8px; }
+        .inv-count-row h3 { font-size: 13px; color: #555; font-weight: 600; }
+
+        /* ── 排序底部抽屉 ── */
+        .sort-sheet-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 3000; display: none;
+        }
+        .sort-sheet-overlay.active { display: block; animation: fadeOverlay .2s; }
+        @keyframes fadeOverlay { from{opacity:0} to{opacity:1} }
+        .sort-sheet {
+            position: fixed; left: 0; right: 0; bottom: -110%; z-index: 3001;
+            background: #fff; border-radius: 20px 20px 0 0;
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+            box-shadow: 0 -6px 24px rgba(0,0,0,.14);
+            transition: bottom .3s cubic-bezier(.25,.46,.45,.94);
+            max-width: 600px; margin: 0 auto;
+        }
+        .sort-sheet.active { bottom: 0; }
+        .sort-sheet-handle { width: 36px; height: 4px; background: #e0e0e0; border-radius: 2px; margin: 12px auto 2px; }
+        .sort-sheet-title { text-align: center; font-size: 13px; color: #aaa; padding: 6px 20px 10px; border-bottom: 1px solid #f0f0f0; }
+        .sort-sheet-item {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; padding: 15px 24px; border: none; background: none;
+            font-size: 15px; color: #222; cursor: pointer; border-bottom: 1px solid #f8f8f8; text-align: left;
+        }
+        .sort-sheet-item:active { background: #f5f5f5; }
+        .sort-sheet-check { color: var(--primary); font-weight: 700; font-size: 16px; visibility: hidden; }
+        .sort-sheet-check.visible { visibility: visible; }
+        .sort-sheet-cancel {
+            display: block; width: calc(100% - 32px); margin: 10px 16px 4px;
+            padding: 13px; background: #f5f5f5; border: none; border-radius: 12px;
+            font-size: 15px; color: #555; font-weight: 600; cursor: pointer;
+        }
+        .sort-sheet-cancel:active { background: #e8e8e8; }
     </style>
 </head>
 <body>
@@ -337,10 +496,10 @@
     </div>
 
     <div class="menu-item" style="border-top:1px solid #eee;padding-top:18px;">
-        <label class="section-title">📦 元数据包（填报模板）</label>
-        <label style="font-size:12px;color:#aaa;margin-bottom:8px;line-height:1.5;">JSON 格式，仅含商品基础配置（<b style="color:#e65100;">不含</b>生产/到期日期），用于将商品列表分发给其他门店或新设备，店员导入后自行填写生产日期</label>
-        <button class="btn btn-blue" style="margin-bottom:8px" onclick="exportJsonMetadata()">📤 导出元数据包</button>
-        <button class="btn btn-outline" style="margin-bottom:8px" onclick="triggerJsonImport()">📥 导入元数据包</button>
+        <label class="section-title">📦 商品库数据（门店间同步）</label>
+        <label style="font-size:12px;color:#aaa;margin-bottom:8px;line-height:1.5;">导出/导入 JSON 格式商品档案。用于多门店间快速同步商品名称、分类、保质期配置（不含物理库存和日期）</label>
+        <button class="btn btn-blue" style="margin-bottom:8px" onclick="exportCatalogJson()">📤 导出商品库数据</button>
+        <button class="btn btn-outline" style="margin-bottom:8px" onclick="triggerJsonImport()">📥 导入商品库数据</button>
     </div>
 
     <div class="menu-item" style="border-top:1px solid #eee;padding-top:18px;">
@@ -412,7 +571,7 @@
 <div class="modal-overlay-ui" id="jsonImportModal">
     <div class="import-modal-card" style="height:auto;">
         <div class="import-modal-header">
-            <h3 id="jiTitle">导入元数据包</h3>
+            <h3 id="jiTitle">导入商品库数据</h3>
             <button class="import-close-btn" onclick="closeJsonImportModal()">✕</button>
         </div>
         <div class="import-modal-body" style="flex:none; padding:12px 16px;">
@@ -422,15 +581,15 @@
                 <label class="import-radio-item selected" id="jiLabel-merge" onclick="selectJsonImportMode('merge')">
                     <input type="radio" name="jiMode" value="merge" checked>
                     <div class="import-radio-label">
-                        <div class="import-radio-name">合并导入 <span style="background:#e8f5e9;color:#2e7d32;font-size:11px;padding:1px 6px;border-radius:4px;margin-left:4px;">推荐</span></div>
-                        <div class="import-radio-desc">按名称去重：已有同名"待填写"条目的跳过，没有的追加。已填日期的记录不动</div>
+                        <div class="import-radio-name">合并导入 <span style="background:#e8f5e9;color:#2e7d32;font-size:11px;padding:1px 6px;border-radius:4px;margin-left:4px;">跳过已有</span></div>
+                        <div class="import-radio-desc">按名称+条码识别。库中没有的追加，已有的跳过</div>
                     </div>
                 </label>
                 <label class="import-radio-item danger-mode" id="jiLabel-overwrite" onclick="selectJsonImportMode('overwrite')">
                     <input type="radio" name="jiMode" value="overwrite">
                     <div class="import-radio-label">
-                        <div class="import-radio-name">覆盖导入 <span style="background:#ffcdd2;color:#c62828;font-size:11px;padding:1px 6px;border-radius:4px;margin-left:4px;">危险</span></div>
-                        <div class="import-radio-desc">清除现有"待填写"条目，换成文件内容。已填日期的记录保留不动</div>
+                        <div class="import-radio-name">覆盖导入 <span style="background:#ffcdd2;color:#c62828;font-size:11px;padding:1px 6px;border-radius:4px;margin-left:4px;">更新已有</span></div>
+                        <div class="import-radio-desc">按名称+条码识别。已有的用文件信息(分类、保质期)更新</div>
                     </div>
                 </label>
             </div>
@@ -469,7 +628,7 @@
         </div>
         <div class="store-version-hint" id="storeVersionHint"></div>
     </button>
-    <span class="page-label" id="headerTitle">录入</span>
+    <span class="page-label" id="headerTitle">商品库</span>
 </div>
 
 <div class="warn-banner" id="warnBanner" onclick="handleBannerClick()">
@@ -482,133 +641,114 @@
     </div>
 </div>
 
-<div id="view-add" class="view-section active">
-    <div class="card" style="position:sticky;top:58px;z-index:10;box-shadow:0 10px 15px -3px rgba(0,0,0,.1);">
-        <h3 id="formTitle" style="margin-bottom:13px;font-size:15px;">✏️ 填写产品信息</h3>
-        <input type="hidden" id="editId">
-
-        <div class="form-group autocomplete-wrapper">
-            <div class="scan-input-wrapper">
-                <input type="text" id="prodName" placeholder="产品名称 (如: 鲜奶)" autocomplete="off">
-                <button class="scan-trigger-btn" onclick="openScanner()" title="扫描条形码" type="button" aria-label="扫描条形码">
-                    <!-- 条形码竖线 -->
-                    <svg viewBox="0 0 22 22" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- 四角扫描框 -->
-                        <path d="M1 6V2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M21 6V2h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M1 16v4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M21 16v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                        <!-- 条形码竖线 -->
-                        <line x1="5"    y1="7.5" x2="5"    y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                        <line x1="7"    y1="7.5" x2="7"    y2="14.5" stroke="currentColor" stroke-width="2"   stroke-linecap="round"/>
-                        <line x1="9.5"  y1="7.5" x2="9.5"  y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                        <line x1="11.5" y1="7.5" x2="11.5" y2="14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                        <line x1="13.5" y1="7.5" x2="13.5" y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                        <line x1="15.5" y1="7.5" x2="15.5" y2="14.5" stroke="currentColor" stroke-width="2"   stroke-linecap="round"/>
-                        <line x1="17"   y1="7.5" x2="17"   y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                    </svg>
-                </button>
-            </div>
-            <div id="prodNameSuggest" class="suggestions-list"></div>
-        </div>
-
-        <div class="form-group">
-            <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">条形码（可选，扫描自动填入）</label>
-            <input type="text" id="prodBarcode" placeholder="如: 6901028001136" autocomplete="off" inputmode="numeric" style="font-family:monospace;letter-spacing:1px;">
-        </div>
-
-        <div class="form-group duration-input">
-            <select id="prodCategory"></select>
-            <select id="prodLocation">
-                <option value="常温"> 常温</option>
-                <option value="冷藏"> 冷藏</option>
-                <option value="冷冻"> 冷冻</option>
-            </select>
-        </div>
-
-        <div class="duration-input" style="margin-bottom:14px;">
-            <div class="form-group" style="margin:0;flex:1;">
-                <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">生产日期</label>
-                <input type="date" id="prodDate">
-            </div>
-            <div class="form-group" style="margin:0;flex:1;">
-                <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">库存数量</label>
-                <input type="number" id="prodQty" placeholder="1" min="1">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">保质期</label>
-            <div class="duration-input">
-                <input type="number" id="shelfLife" placeholder="时长" style="flex:2;" onfocus="handleFocus(this)">
-                <select id="timeUnit" style="flex:1;">
-                    <option value="days">天</option><option value="months">个月</option><option value="years">年</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="item-btns">
-            <button id="saveProdBtn" class="btn btn-primary" onclick="saveProduct()">保存记录</button>
-            <button id="cancelBtn"   class="btn btn-outline" style="display:none;" onclick="cancelEdit()">取消</button>
-        </div>
+<div id="view-catalog" class="view-section active">
+    <div class="search-container autocomplete-wrapper scan-input-wrapper" style="margin-bottom:8px;">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="catalogSearchInput" placeholder="搜索商品名称或条码…" autocomplete="off">
+        <button class="scan-trigger-btn" onclick="openScanner('search-catalog')" title="扫描条形码" type="button" aria-label="扫描条形码">
+            <svg viewBox="0 0 22 22" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 6V2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 6V2h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M1 16v4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 16v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="7" y1="7.5" x2="7" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="11.5" y1="7.5" x2="11.5" y2="14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="15.5" y1="7.5" x2="15.5" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
     </div>
 
-    <div class="list-toolbar" style="margin-top:18px;"><h3>🕒 最近录入（最新 10 条）</h3></div>
-    <div id="recentProductList"></div>
-</div>
-
-<div id="view-list" class="view-section">
-    <div class="search-container autocomplete-wrapper">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="搜索名称、分类、位置…" autocomplete="off">
-        <div id="searchSuggest" class="suggestions-list"></div>
+    <div class="list-toolbar" style="margin-bottom:8px;">
+        <select id="catalogCatFilter" onchange="renderCatalogList()" style="width:auto;flex:1;margin-right:8px;padding:6px;border-radius:6px;font-size:13px;">
+            <option value="">全部分类</option>
+        </select>
+        <label style="display:flex;align-items:center;font-size:13px;color:#555;padding:6px 0;">
+            <input type="checkbox" id="catalogNoExpFilter" onchange="renderCatalogList()" style="width:16px;height:16px;margin-right:4px;"> 仅看无保质期
+        </label>
     </div>
 
     <div class="list-toolbar">
-        <h3 id="listCount">全部商品 (0)</h3>
+        <h3 id="catalogCount">商品库 (0)</h3>
         <div class="toolbar-actions">
-            <button id="btnAnalysis" onclick="toggleAnalysis()">📊 分布</button>
-            <button id="btnBatch"    onclick="toggleBatchMode()">⚙️ 批量</button>
-            <select id="sortMode" onchange="renderAllList()">
-                <option value="expiry">⏳ 临期</option>
-                <option value="pending">📝 待填日期</option>
-                <option value="date">🆕 生产日期</option>
-                <option value="recent">🕒 最近录入</option>
-                <option value="life">⏱️ 保质时长</option>
-            </select>
-            <button id="sortOrderBtn" onclick="toggleSortOrder()" title="切换升降序">⬆️</button>
+            <button class="btn btn-outline" style="width:auto;padding:8px 14px;font-size:13px;background-color: #fff;" onclick="openAddProductModal()">+ 添加商品</button>
         </div>
     </div>
 
+    <div id="catalogList"></div>
+</div>
+
+<div id="view-list" class="view-section">
+    <div class="search-container autocomplete-wrapper scan-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="搜索名称、分类、位置…" autocomplete="off">
+        <button class="scan-trigger-btn" onclick="openScanner('search-list')" title="扫描条形码" type="button" aria-label="扫描条形码">
+            <svg viewBox="0 0 22 22" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 6V2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 6V2h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M1 16v4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 16v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="7" y1="7.5" x2="7" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="11.5" y1="7.5" x2="11.5" y2="14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="15.5" y1="7.5" x2="15.5" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
+        <div id="searchSuggest" class="suggestions-list"></div>
+    </div>
+
+    <div class="inv-toolbar-row">
+        <div class="inv-filter-chips">
+            <button id="btnWithdrawn" class="inv-chip" onclick="toggleWithdrawnMode()" title="显示/隐藏已下架批次">👁 下架</button>
+            <button id="btnPending"   class="inv-chip" onclick="togglePendingMode()" title="只看待完善">⏳ 待完善</button>
+        </div>
+        <div class="inv-toolbar-right">
+            <button id="btnAnalysis" class="inv-icon-btn" onclick="toggleAnalysis()" title="过期分布图">📊</button>
+            <button id="btnBatch"    class="inv-icon-btn" onclick="toggleBatchMode()" title="批量操作">⚙️</button>
+            <button id="sortChipBtn" class="sort-chip-btn" onclick="openSortSheet()">排序: <span id="sortLabel">临期</span>&nbsp;<span id="sortArrow">↑</span></button>
+        </div>
+    </div>
+    <div class="inv-count-row"><h3 id="listCount">全部 (0) | 待完善 (0)</h3></div>
+    <!-- 隐藏的排序 select，供 JS 读取值用 -->
+    <select id="sortMode" style="display:none" onchange="renderAllList()">
+        <option value="expiry">临期</option>
+        <option value="date">生产日期</option>
+        <option value="recent">最近录入</option>
+        <option value="life">保质时长</option>
+    </select>
+
     <div class="batch-panel" id="batchPanel">
         <div>
-            <input type="checkbox" id="selectAllCB" onchange="toggleSelectAll()">
+            <input type="checkbox" id="selectAllCB" onchange="toggleSelectAll()" style="width:16px;height:16px;margin-right:4px;">
             <label for="selectAllCB" style="font-size:14px;">全选</label>
         </div>
-        <button class="btn-sm btn-danger" id="batchDeleteBtn" style="background:#ffcdd2;" onclick="batchDelete()">批量删除</button>
+        <div style="display:flex;gap:8px;">
+            <button class="btn-sm btn-outline" id="batchWithdrawBtn" onclick="batchWithdraw()">批量下架</button>
+            <button class="btn-sm btn-danger" id="batchDeleteBtn" style="background:#ffcdd2;" onclick="batchDelete()">批量删除</button>
+        </div>
     </div>
 
     <div id="chartContainer"></div>
     <div id="allProductList"></div>
+
+    <!-- V9.0.2 浮动添加批次按钮 -->
+    <button class="fab-add" id="fabAddBatch" onclick="openAddBatchModal()" title="添加批次" aria-label="添加批次">+</button>
 </div>
 
 <div class="bottom-nav">
-    <div class="nav-item active" id="nav-add" onclick="switchTab('add')"><span class="icon">📝</span><span>录入</span></div>
-    <div class="nav-item" id="nav-list" onclick="switchTab('list')"><span class="icon">📦</span><span>库存</span></div>
+    <div class="nav-item active" id="nav-catalog" onclick="switchTab('catalog')"><span class="icon">📚</span><span>商品库</span></div>
+    <div class="nav-item" id="nav-list" onclick="switchTab('list')"><span class="icon">📦</span><span>商店库存</span></div>
 </div>
 
 <script>
 // ================================================================
 // 全局版本号
 // ================================================================
-const APP_VERSION = 'V8.3';
-// 启动时把版本号同步到页面标题，避免 title 和 APP_VERSION 分头维护时漏改
+const APP_VERSION = 'V9.0.2';
 document.title = `食品效期助手 ${APP_VERSION}`;
 
 // ================================================================
 // 全局常量
 // ================================================================
-const STORE_KEYS = ['foodProducts','foodConfig','foodCategories','foodBackup_1','foodBackup_2','foodBackup_3'];
+const STORE_KEYS = ['foodProducts','foodProducts_legacy','foodCatalog','foodInventory','foodConfig','foodCategories','foodBackup_1','foodBackup_2','foodBackup_3'];
 
 // ================================================================
 // 工具函数
@@ -670,8 +810,6 @@ function escapeHtml(str) {
 }
 let _lastId = 0;
 
-// 【V8.3 新增】为多设备同步预留。浏览器端生成一次稳定的 deviceId(6 位 base36)并缓存到 localStorage。
-// Capacitor APK 环境可在启动时覆盖本 key,用原生的设备 UID 替代。
 function _getDeviceId() {
     try {
         let d = localStorage.getItem('foodDeviceId');
@@ -681,7 +819,7 @@ function _getDeviceId() {
         }
         return d;
     } catch(e) {
-        return 'local0'; // 隐私模式等 localStorage 不可用时的兜底
+        return 'local0';
     }
 }
 
@@ -689,16 +827,9 @@ function genId() {
     let id = Date.now() * 1000 + Math.floor(Math.random() * 1000);
     if (id <= _lastId) id = _lastId + 1;
     _lastId = id;
-    // 结构:[17 位数字时间戳] + [6 位 deviceId]  总长 23 字符
-    // - 前 17 位保证字典序 = 时间顺序,兼容现有 localeCompare(numeric:true) 排序逻辑
-    // - 后 6 位 deviceId 降低多设备同毫秒冲突概率(从 1/1000 降到 ~1/6.8 亿)
-    // - 为未来的 Capacitor 多门店同步打基础:同一时刻 A/B 店同时生成 id 不会撞
     return String(id).padStart(17, '0') + _getDeviceId();
 }
 
-// ================================================================
-// localStorage 安全写入
-// ================================================================
 function safeLSSet(key, value) {
     try {
         localStorage.setItem(key, value);
@@ -719,8 +850,6 @@ function safeLSSet(key, value) {
 // ================================================================
 let stores = [];
 let activeStoreId = null;
-// 非当前门店的统计数据缓存(count/pending/warn/expired)
-// 单独放一个 Map,避免之前版本直接挂在 store 对象上导致 foodStores JSON 累积脏字段
 const _storeStatsCache = new Map();
 
 function sk(base) { return `${base}_${activeStoreId}`; }
@@ -737,18 +866,6 @@ function initStores() {
             if (old) { safeLSSet(`${key}_${id}`, old); localStorage.removeItem(key); }
         });
     }
-    // V8.2 迁移:清理 V8.1 及以前遗留在 store 对象上的 _cachedXxx 统计缓存字段
-    let dirtyFound = false;
-    stores = stores.map(s => {
-        if (s._cachedCount != null || s._cachedPending != null ||
-            s._cachedWarn != null  || s._cachedExpired != null) {
-            dirtyFound = true;
-            return { id: s.id, name: s.name, createdAt: s.createdAt, lastModified: s.lastModified };
-        }
-        return s;
-    });
-    if (dirtyFound) safeLSSet('foodStores', JSON.stringify(stores));
-
     const saved = localStorage.getItem('foodActiveStore');
     activeStoreId = (saved && stores.find(s => s.id === saved)) ? saved : stores[0].id;
     safeLSSet('foodActiveStore', activeStoreId);
@@ -759,21 +876,39 @@ function loadStoreData() {
     try { const s = localStorage.getItem(sk('foodConfig')); if (s) config = { ...config, ...JSON.parse(s) }; } catch(e) {}
     customCategories = [];
     try { const s = localStorage.getItem(sk('foodCategories')); if (s) customCategories = JSON.parse(s); } catch(e) {}
-    // 切换门店或重新加载数据后,分类列表可能完全不同,强制下次 renderCategorySelect 走慢路径重建
     if (typeof markCategoryDirty === 'function') markCategoryDirty();
-    products = [];
-    try { const s = localStorage.getItem(sk('foodProducts')); if (s) products = JSON.parse(s); } catch(e) {}
-    // 【V8.3 迁移】统一 id 为字符串。老版本(V4.5 及以前)的 id 是 Number,
-    // 比较时只能依赖 String(p.id) 兜底。加载时做一次性规范化,
-    // 后续代码就可以安全地用严格相等 ===,无需每处都 String() 包装。
-    let idDirty = false;
-    products.forEach(p => {
-        if (p.id != null && typeof p.id !== 'string') {
-            p.id = String(p.id);
-            idDirty = true;
+
+    catalog = [];
+    inventory = [];
+    migrateV8ToV9IfNeeded();
+    try { const s = localStorage.getItem(sk('foodCatalog'));   if (s) catalog   = JSON.parse(s); } catch(e) { catalog = []; }
+    try { const s = localStorage.getItem(sk('foodInventory')); if (s) inventory = JSON.parse(s); } catch(e) { inventory = []; }
+
+    // 【Bug #1 + #2 一次性清洗】
+    //   旧版本(v9.0 正式版早期)可能把 '长期有效' 字符串写进 inv.expiry,
+    //   以及把无保质期批次的 date 留成用户碰过的值。新版本约定:
+    //     - noExpiry 批次:date='', expiry=''
+    //     - 有保质期批次:date=YYYY-MM-DD, expiry=YYYY-MM-DD
+    //   这段逻辑幂等,每次 loadStoreData 都跑一次,只对不合规数据生效。
+    let dirty = false;
+    inventory.forEach(inv => {
+        // id 规范化(原 V8.3 迁移逻辑保留)
+        if (inv.id != null && typeof inv.id !== 'string') {
+            inv.id = String(inv.id);
+            dirty = true;
+        }
+        if (inv.noExpiry) {
+            if (inv.date !== '') { inv.date = ''; dirty = true; }
+            if (inv.expiry !== '') { inv.expiry = ''; dirty = true; }
+        } else if (inv.expiry && !/^\d{4}-\d{2}-\d{2}$/.test(inv.expiry)) {
+            // 有保质期批次的 expiry 必须是 ISO 日期,否则清空(下次 renderAllList 排序才正确)
+            inv.expiry = '';
+            dirty = true;
         }
     });
-    if (idDirty) safeLSSet(sk('foodProducts'), JSON.stringify(products));
+    if (dirty) safeLSSet(sk('foodInventory'), JSON.stringify(inventory));
+
+    _rebuildProductsView();
 }
 
 function switchStore(storeId) {
@@ -786,26 +921,36 @@ function switchStore(storeId) {
     showToast(`✅ 已切换到：${getActiveStore().name}`);
 }
 
-// 重置页面瞬态 UI 状态(批量模式/分析图/排序方向/列表模式)。
-// 在切换门店、恢复备份等场景复用,避免多份几乎相同的 DOM 重置代码。
 function resetTransientUIState() {
     if (chartInstance) { chartInstance.dispose(); chartInstance = null; }
-    // 同步重置图表增量更新的状态标记,避免 dispose 后下次仍走 else 分支导致无数据
     _chartDataSig = null;
     _chartInitialized = false;
     isAnalysisOpen = false;
     isBatchMode = false;
+    isShowWithdrawn = false;
+    isShowPendingOnly = false;
     currentSortOrder = 'asc';
     document.getElementById('chartContainer').style.display = 'none';
-    document.getElementById('btnAnalysis').style.backgroundColor = 'white';
+    document.getElementById('btnAnalysis').classList.remove('chip-active-blue');
     document.getElementById('batchPanel').style.display = 'none';
-    document.getElementById('btnBatch').style.backgroundColor = 'white';
+    document.getElementById('btnBatch').classList.remove('chip-active-blue');
+    const btnW = document.getElementById('btnWithdrawn');
+    if (btnW) { btnW.classList.remove('chip-active-blue'); btnW.classList.remove('tool-btn-disabled'); }
+    const btnP = document.getElementById('btnPending');
+    if (btnP) { btnP.classList.remove('chip-active-blue'); btnP.classList.remove('tool-btn-disabled'); }
     document.getElementById('selectAllCB').checked = false;
-    document.getElementById('sortOrderBtn').textContent = '⬆️';
+    const arrowEl = document.getElementById('sortArrow');
+    if (arrowEl) arrowEl.textContent = '↑';
+    const lblEl = document.getElementById('sortLabel');
+    if (lblEl) lblEl.textContent = '临期';
+    // reset sheet checkmarks
+    ['expiry','date','recent','life'].forEach(v => {
+        const el = document.getElementById('ss-' + v);
+        if (el) el.classList.toggle('visible', v === 'expiry');
+    });
     document.getElementById('sortMode').value = 'expiry';
 }
 
-// 把 config 回填到顶部设置栏的几个输入框
 function syncConfigToSettingsInputs() {
     document.getElementById('warnDays').value    = config.warnDays;
     document.getElementById('defProdDate').value = config.defProdDate;
@@ -819,7 +964,7 @@ function afterStoreSwitch() {
     syncConfigToSettingsInputs();
     renderCategorySelect('其他'); renderCategoryManager();
     renderBackupSlots();
-    resetForm(); renderRecentList(); renderAllList(); updateWarnBanner();
+    renderCatalogList(); renderAllList(); updateWarnBanner();
 }
 
 function updateStoreHeader() {
@@ -922,30 +1067,49 @@ function closeStorePicker() {
     document.getElementById('storePickerModal').classList.remove('active');
 }
 
-/** 刷新非当前门店的缓存统计（将无日期的数据单独剥离统计） */
 function refreshStoreCaches() {
     const todayStr = getLocalDateStr();
     stores.forEach(store => {
-        if (store.id === activeStoreId) return; // 当前门店用内存数据
+        if (store.id === activeStoreId) return;
         const stats = { count: 0, pending: 0, warn: 0, expired: 0 };
         try {
-            const d = localStorage.getItem(`foodProducts_${store.id}`);
             const cfg = localStorage.getItem(`foodConfig_${store.id}`);
             const warnDays = cfg ? (JSON.parse(cfg).warnDays || 7) : 7;
             const threshold = getExpiry(todayStr, warnDays, 'days');
-            if (d) {
-                const arr = JSON.parse(d);
-                arr.forEach(p => {
-                    if (!p.date) {
+            const invRaw = localStorage.getItem(`foodInventory_${store.id}`);
+            if (invRaw) {
+                const arr = JSON.parse(invRaw);
+                arr.forEach(inv => {
+                    if (inv.status && inv.status !== 'active') return; 
+                    if (!inv.date && !inv.noExpiry) {
                         stats.pending++;
-                    } else {
+                    } else if (inv.date && !inv.noExpiry) {
                         stats.count++;
-                        if (p.expiry && p.expiry < todayStr) stats.expired++;
-                        else if (p.expiry && p.expiry <= threshold) stats.warn++;
+                        if (inv.expiry && inv.expiry < todayStr) stats.expired++;
+                        else if (inv.expiry && inv.expiry <= threshold) stats.warn++;
+                    } else if (inv.noExpiry) {
+                        stats.count++;
                     }
                 });
+            } else {
+                const d = localStorage.getItem(`foodProducts_${store.id}`);
+                if (d) {
+                    const arr = JSON.parse(d);
+                    arr.forEach(p => {
+                        if (p.status === 'withdrawn') return;
+                        if (!p.date && !p.noExpiry) {
+                            stats.pending++;
+                        } else if (p.date && !p.noExpiry) {
+                            stats.count++;
+                            if (p.expiry && p.expiry < todayStr) stats.expired++;
+                            else if (p.expiry && p.expiry <= threshold) stats.warn++;
+                        } else if (p.noExpiry) {
+                            stats.count++;
+                        }
+                    });
+                }
             }
-        } catch(e) { /* 保持 stats 为 0 */ }
+        } catch(e) {}
         _storeStatsCache.set(store.id, stats);
     });
 }
@@ -961,12 +1125,15 @@ function renderStoreList() {
             const todayStr = getLocalDateStr();
             const threshold = getExpiry(todayStr, config.warnDays, 'days');
             products.forEach(p => { 
-                if (!p.date) {
+                if (p.status === 'withdrawn') return;
+                if (!p.date && !p.noExpiry) {
                     pendingCount++;
-                } else {
+                } else if (p.date && !p.noExpiry) {
                     count++;
                     if (p.expiry && p.expiry < todayStr) expiredCount++; 
                     else if (p.expiry && p.expiry <= threshold) warnCount++; 
+                } else if (p.noExpiry) {
+                    count++;
                 }
             });
         } else {
@@ -978,9 +1145,9 @@ function renderStoreList() {
         }
         
         let metaHtml = `共 ${count} 件`;
-        if (pendingCount > 0) metaHtml += ` · <span style="color:#555;font-weight:bold;">${pendingCount} 待填</span>`;
         if (expiredCount > 0) metaHtml += ` · <span style="color:#d32f2f;">${expiredCount} 已过期</span>`;
         else if (warnCount > 0) metaHtml += ` · <span style="color:#ef6c00;">${warnCount} 临期</span>`;
+        if (pendingCount > 0) metaHtml += ` · <span style="color:#888;">${pendingCount} 待完善</span>`;
         
         const div = document.createElement('div');
         div.className = `store-item${isActive ? ' active-store' : ''}`;
@@ -1008,17 +1175,19 @@ function renderStoreList() {
 // 自动备份
 // ================================================================
 let _lastBackupTs = 0;
-// Quota 失败后的延长冷却时间(ms),避免短时间反复触发失败 toast
 const _BACKUP_QUOTA_COOLDOWN = 5 * 60 * 1000;
 
 function autoBackup() {
     const now = Date.now();
-    if (now - _lastBackupTs < 60000) return; // 60 秒节流
+    if (now - _lastBackupTs < 60000) return; 
     _lastBackupTs = now;
-    const snap = JSON.stringify({ products, config, customCategories, ts: now, storeId: activeStoreId }, _stripTempFields);
+    const snap = JSON.stringify({
+        _version: 'v9',
+        catalog, inventory,
+        config, customCategories,
+        ts: now, storeId: activeStoreId
+    }, _stripTempFields);
     try {
-        // 按 3→2→1 顺序依次轮转,任何一步失败立即终止,避免备份链错位污染已有快照
-        // 失败后把 _lastBackupTs 推到未来一段时间,避免 5 分钟内的下次 autoBackup 再次命中同样的 Quota 失败
         const b2 = localStorage.getItem(sk('foodBackup_2'));
         if (b2 && !safeLSSet(sk('foodBackup_3'), b2)) { _lastBackupTs = now + _BACKUP_QUOTA_COOLDOWN; return; }
         const b1 = localStorage.getItem(sk('foodBackup_1'));
@@ -1039,7 +1208,7 @@ function renderBackupSlots() {
             if (!raw) return;
             const b = JSON.parse(raw);
             found = true;
-            const cnt = (b.products || []).length;
+            const cnt = (b.inventory || b.products || []).length;
             const div = document.createElement('div');
             div.className = 'backup-slot';
             div.innerHTML = `
@@ -1048,7 +1217,6 @@ function renderBackupSlots() {
                     <div class="backup-slot-time">${fmtDatetime(b.ts)}</div>
                 </div>
                 <button class="backup-restore-btn" data-restore="${n}">恢复</button>`;
-            // 直接挂 click,避免动态 HTML 里的 onclick 字符串依赖全局函数名
             div.querySelector('.backup-restore-btn').addEventListener('click', () => restoreBackup(n));
             container.appendChild(div);
         } catch(e) {}
@@ -1063,44 +1231,49 @@ function restoreBackup(slot) {
     if (!raw) return showToast('⚠️ 备份不存在');
     let b;
     try { b = JSON.parse(raw); } catch(e) { return showToast('❌ 备份文件已损坏，无法恢复', 3000); }
+    const cnt = (b.inventory || b.products || []).length;
     showConfirmModal(
         `恢复备份 ${slot}`,
-        `将恢复至 ${fmtDatetime(b.ts)} 的状态（${(b.products||[]).length} 条记录）。当前数据将被覆盖，是否继续？`,
+        `将恢复至 ${fmtDatetime(b.ts)} 的状态（${cnt} 条记录）。当前数据将被覆盖，是否继续？`,
         () => {
-            products = b.products || [];
+            if (Array.isArray(b.catalog) || Array.isArray(b.inventory)) {
+                catalog   = Array.isArray(b.catalog)   ? b.catalog   : [];
+                inventory = Array.isArray(b.inventory) ? b.inventory : [];
+            } else if (Array.isArray(b.products)) {
+                const migrated = _migrateProductsArray(b.products);
+                catalog   = migrated.catalog;
+                inventory = migrated.inventory;
+            } else {
+                catalog = []; inventory = [];
+            }
             config = b.config || config;
             customCategories = b.customCategories || [];
             saveCategories(); safeLSSet(sk('foodConfig'), JSON.stringify(config));
             syncConfigToSettingsInputs();
             renderCategorySelect('其他'); renderCategoryManager();
 
-            // 【Bug修复】恢复备份后必须退出批量模式、清空所有瞬态 UI 状态。
-            // 若恢复前处于批量选择状态,syncData 会调用 renderRecentList,
-            // 导致录入页的最近录入卡片也渲染出选择框。resetTransientUIState
-            // 统一把 batch/analysis/sort 都清掉,再渲染就不会有残留。
             resetTransientUIState();
-
             syncData(false);
-            showToast(`✅ 已恢复备份 ${slot}（${products.length} 条记录）`);
+            showToast(`✅ 已恢复备份 ${slot}（${inventory.length} 条记录）`);
         }
     );
 }
 
 // ================================================================
-// 今日预警 Banner & 智能路由
+// 今日预警 Banner
 // ================================================================
 function updateWarnBanner() {
     const todayStr = getLocalDateStr();
     const threshold = getExpiry(todayStr, config.warnDays, 'days');
-    let expiredCnt = 0, warnCnt = 0, pendingCnt = 0;
+    let expiredCnt = 0, warnCnt = 0;
     products.forEach(p => {
-        if (!p.date) pendingCnt++;
-        else if (p.expiry && p.expiry < todayStr) expiredCnt++;
+        if (!p.date || p.status === 'withdrawn' || p.noExpiry) return;
+        if (p.expiry && p.expiry < todayStr) expiredCnt++;
         else if (p.expiry && p.expiry <= threshold) warnCnt++;
     });
     const banner = document.getElementById('warnBanner');
     const text   = document.getElementById('warnBannerText');
-    const total  = expiredCnt + warnCnt + pendingCnt;
+    const total  = expiredCnt + warnCnt;
     if (!total) { banner.style.display = 'none'; return; }
     banner.style.display = 'block';
     banner.classList.toggle('has-expired', expiredCnt > 0);
@@ -1108,24 +1281,20 @@ function updateWarnBanner() {
     const parts = [];
     if (expiredCnt) parts.push(`${expiredCnt} 件已过期`);
     if (warnCnt)    parts.push(`${warnCnt} 件即将到期`);
-    if (pendingCnt) parts.push(`${pendingCnt} 件待填写`);
     text.textContent = msg;
     document.querySelector('.warn-banner-sub').textContent = parts.join(' + ') + ' → 点击处理';
 }
 
 function handleBannerClick() {
     switchTab('list');
-    // 清空搜索框,避免带着旧搜索词进入库存页后过滤干扰用户看不全待处理商品
     document.getElementById('searchInput').value = '';
-    const todayStr = getLocalDateStr();
-    const hasExpired = products.some(p => p.expiry && p.expiry < todayStr);
-    if (hasExpired) {
-        document.getElementById('sortMode').value = 'expiry';
-    } else if (products.some(p => !p.date)) {
-        document.getElementById('sortMode').value = 'pending';
-    } else {
-        document.getElementById('sortMode').value = 'expiry';
-    }
+    document.getElementById('sortMode').value = 'expiry';
+    isShowWithdrawn = false;
+    isShowPendingOnly = false;
+    const bW = document.getElementById('btnWithdrawn');
+    if (bW) bW.classList.remove('chip-active-blue');
+    const bP = document.getElementById('btnPending');
+    if (bP) bP.classList.remove('chip-active-blue');
     renderAllList();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1142,56 +1311,33 @@ const BUILTIN_CATEGORIES = [
 let customCategories = [];
 function getAllCategories() { return [...BUILTIN_CATEGORIES, ...customCategories]; }
 
-// 【优化】只有分类增删时才重建 option 列表,否则仅更新 selected,
-// 能显著降低 resetForm / saveProduct 等高频路径的重排成本
 let _catSelectDirty = true;
 function markCategoryDirty() { _catSelectDirty = true; }
 
 function renderCategorySelect(sel) {
-    const el = document.getElementById('prodCategory');
-    const cur = sel !== undefined ? sel : el.value;
-
-    // 快路径:option 列表没变,只需要切换 selected
-    if (!_catSelectDirty && el.options.length > 0) {
-        let matched = false;
-        for (let i = 0; i < el.options.length; i++) {
-            const opt = el.options[i];
-            // 清掉旧的"未知分类"占位
-            if (opt.textContent.includes('（未知分类）') && opt.value !== cur) {
-                el.remove(i); i--; continue;
-            }
-            if (opt.value === cur) { opt.selected = true; matched = true; }
-            else { opt.selected = false; }
-        }
-        if (!matched && cur) {
-            // 补一个未知分类占位(同慢路径逻辑)
-            const o = document.createElement('option');
-            o.value = cur;
-            o.textContent = `❓ ${cur}（未知分类）`;
-            o.selected = true;
-            el.appendChild(o);
-        }
-        return;
-    }
-
-    // 慢路径:全量重建
-    el.innerHTML = '';
-    getAllCategories().forEach(c => {
-        const o = document.createElement('option');
-        o.value = c.value; o.textContent = c.label;
-        if (c.value === cur) o.selected = true;
-        el.appendChild(o);
-    });
-    // 未知分类回退：如果 cur 不在任何已知分类里(例如导入的其他门店自定义分类),
-    // 插入一个临时 option 并选中,防止编辑保存时分类被静默改成第一项(生鲜)
-    if (cur && !getAllCategories().some(c => c.value === cur)) {
-        const o = document.createElement('option');
-        o.value = cur;
-        o.textContent = `❓ ${cur}（未知分类）`;
-        o.selected = true;
-        el.appendChild(o);
-    }
     _catSelectDirty = false;
+    const el = document.getElementById('pmCategory');
+    if (el) {
+        const cur = el.value || '其他';
+        el.innerHTML = '';
+        getAllCategories().forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.value; o.textContent = c.label;
+            if (c.value === cur) o.selected = true;
+            el.appendChild(o);
+        });
+    }
+    const filter = document.getElementById('catalogCatFilter');
+    if (filter) {
+        const curF = filter.value;
+        filter.innerHTML = '<option value="">全部分类</option>';
+        getAllCategories().forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.value; o.textContent = c.label;
+            if (c.value === curF) o.selected = true;
+            filter.appendChild(o);
+        });
+    }
 }
 function renderCategoryManager() {
     const list = document.getElementById('catList');
@@ -1218,23 +1364,22 @@ function addCustomCategory() {
     if (getAllCategories().some(c => c.value === value || c.label === raw)) return showToast('⚠️ 该分类已存在');
     if (value.length > 15) return showToast('⚠️ 分类名称最多 15 字');
     customCategories.push({ label: raw, value });
-    // 保留当前录入表单下拉框选中的分类(用户正在该界面上操作,不应被打断)
-    const curSel = document.getElementById('prodCategory').value || '其他';
-    saveCategories(); renderCategorySelect(curSel); renderCategoryManager();
+    saveCategories();
+    renderCategoryManager();
+    renderCategorySelect();
+    renderCatalogList();
     input.value = '';
     showToast(`✅ 已添加：${raw}`);
 }
 function deleteCustomCategory(idx) {
     const c = customCategories[idx];
     if (!c) return;
-    showConfirmModal('删除分类', `确定删除「${c.label}」？该分类产品将归入「其他」。`, () => {
-        products.forEach(p => { if (p.category === c.value) p.category = '其他'; });
+    showConfirmModal('删除分类', `确定删除「${c.label}」？该分类商品将归入「其他」。`, () => {
+        catalog.forEach(cat => { if (cat.category === c.value) cat.category = '其他'; });
         customCategories.splice(idx, 1);
         saveCategories(); syncData();
-        // 若当前下拉选中的恰好是被删除的分类,要回退到"其他";否则保留
-        const curRaw = document.getElementById('prodCategory').value;
-        const curSel = (curRaw === c.value) ? '其他' : (curRaw || '其他');
-        renderCategorySelect(curSel); renderCategoryManager();
+        renderCategoryManager();
+        renderCategorySelect();
     });
 }
 function saveCategories() {
@@ -1270,11 +1415,162 @@ document.getElementById('confirmModalBtn').addEventListener('click', () => {
 });
 
 // ================================================================
-// 全局状态
+// 数据层
 // ================================================================
+
+function _makeCatalogKey(name, barcode) {
+    return `${(name || '').trim()}|||${(barcode || '').trim()}`;
+}
+
+function _getRenderMaps() {
+    const catMap = new Map(catalog.map(c => [c.id, c]));
+    const invByCatId = new Map();
+    inventory.forEach(i => {
+        if (i.status && i.status !== 'active') return;
+        const list = invByCatId.get(i.catalogId) || [];
+        list.push(i);
+        invByCatId.set(i.catalogId, list);
+    });
+    return { catMap, invByCatId };
+}
+
+function _rebuildProductsView() {
+    const catMap = new Map(catalog.map(c => [c.id, c]));
+    products = inventory.reduce((acc, inv) => {
+        const cat = catMap.get(inv.catalogId);
+        if (!cat) return acc; 
+        acc.push({
+            id:       inv.id,
+            date:     inv.date || '',
+            qty:      inv.qty || 1,
+            location: inv.location || '常温',
+            status:   inv.status || 'active',
+            life:     inv.life,
+            unit:     inv.unit,
+            expiry:   inv.expiry || '',
+            noExpiry: !!cat.noExpiry,
+            name:     cat.name,
+            barcode:  cat.barcode || '',
+            category: cat.category || '其他',
+        });
+        return acc;
+    }, []);
+}
+
+function _upsertCatalog(name, barcode, category, life, unit, noExpiry=false) {
+    const key = _makeCatalogKey(name, barcode);
+    let cat = catalog.find(c => _makeCatalogKey(c.name, c.barcode) === key);
+    const now = Date.now();
+    if (!cat) {
+        cat = {
+            id:        'cat_' + genId(),
+            name:      (name || '').trim(),
+            barcode:   (barcode || '').trim(),
+            category:  category || '其他',
+            life:      parseInt(life) || 0,
+            unit:      ['days','months','years'].includes(unit) ? unit : 'days',
+            noExpiry:  !!noExpiry,
+            createdAt: now,
+            updatedAt: now,
+        };
+        catalog.push(cat);
+    } else {
+        cat.category  = category || cat.category;
+        cat.life      = parseInt(life) || cat.life;
+        cat.unit      = ['days','months','years'].includes(unit) ? unit : cat.unit;
+        cat.noExpiry  = !!noExpiry;
+        cat.updatedAt = now;
+    }
+    return cat;
+}
+
+function _migrateProductsArray(oldProducts) {
+    if (!Array.isArray(oldProducts)) return { catalog: [], inventory: [] };
+
+    const catMap = new Map();   
+    const newInv = [];
+    const now = Date.now();
+
+    const clean = oldProducts.filter(p => p && p.name);
+    const sorted = clean.sort((a, b) =>
+        String(a.id || '').localeCompare(String(b.id || ''), undefined, { numeric: true })
+    );
+
+    sorted.forEach(p => {
+        const key = _makeCatalogKey(p.name, p.barcode || '');
+        const unit = ['days','months','years'].includes(p.unit) ? p.unit : 'days';
+        const life = parseInt(p.life) || 0;
+        const noExpiry = !!p.noExpiry;
+
+        let cat = catMap.get(key);
+        if (!cat) {
+            cat = {
+                id:        'cat_' + genId(),
+                name:      String(p.name).trim(),
+                barcode:   (p.barcode || '').trim(),
+                category:  p.category || '其他',
+                life, unit, noExpiry,
+                createdAt: now,
+                updatedAt: now,
+            };
+            catMap.set(key, cat);
+        } else {
+            cat.category  = p.category || cat.category;
+            cat.life      = life || cat.life;
+            cat.unit      = unit;
+            cat.noExpiry  = noExpiry;
+            cat.updatedAt = now;
+        }
+
+        newInv.push({
+            id:        p.id ? String(p.id) : genId(),
+            catalogId: cat.id,
+            // 【Bug #1】无保质期批次 date 无意义,强制清空
+            date:      noExpiry ? '' : (p.date || ''),
+            qty:       Math.max(1, parseInt(p.qty) || 1),
+            location:  p.location || '常温',
+            status:    p.status === 'withdrawn' ? 'withdrawn' : 'active',
+            life, unit, noExpiry,
+            // 【Bug #2】清洗老数据:历史上 noExpiry 批次可能存了'长期有效'字符串,
+            //   新版统一改为 ''。只接受合法的 YYYY-MM-DD 或空串。
+            expiry:    (noExpiry || !p.expiry || !/^\d{4}-\d{2}-\d{2}$/.test(p.expiry)) ? '' : p.expiry,
+            createdAt: now,
+        });
+    });
+
+    return { catalog: Array.from(catMap.values()), inventory: newInv };
+}
+
+function migrateV8ToV9IfNeeded() {
+    if (localStorage.getItem(sk('foodCatalog')) !== null ||
+        localStorage.getItem(sk('foodInventory')) !== null) {
+        return { migrated: false, reason: 'already-migrated' };
+    }
+    const legacy = localStorage.getItem(sk('foodProducts'));
+    if (!legacy) return { migrated: false, reason: 'no-legacy-data' };
+
+    let oldProducts;
+    try {
+        oldProducts = JSON.parse(legacy);
+        if (!Array.isArray(oldProducts)) throw new Error('not-array');
+    } catch(e) {
+        return { migrated: false, reason: 'parse-error', error: e.message };
+    }
+
+    const { catalog: newCat, inventory: newInv } = _migrateProductsArray(oldProducts);
+
+    safeLSSet(sk('foodProducts_legacy'), legacy);
+    safeLSSet(sk('foodCatalog'),  JSON.stringify(newCat));
+    safeLSSet(sk('foodInventory'), JSON.stringify(newInv));
+
+    return { migrated: true };
+}
+
+let catalog = [];
+let inventory = [];
 let products = [];
 let config = { warnDays: 7, defProdDate: '', defLife: '', defUnit: 'days' };
-let isBatchMode = false, isAnalysisOpen = false, chartInstance = null, currentSortOrder = 'asc';
+let isBatchMode = false, isAnalysisOpen = false, isShowWithdrawn = false, isShowPendingOnly = false, chartInstance = null, currentSortOrder = 'asc';
 
 // ================================================================
 // 初始化
@@ -1284,30 +1580,35 @@ document.addEventListener('DOMContentLoaded', function() {
     initApiSettingsUI();
     syncConfigToSettingsInputs();
     renderCategorySelect('其他'); renderCategoryManager(); renderBackupSlots();
-    resetForm(); renderRecentList(); renderAllList(); updateWarnBanner();
+    renderCatalogList(); renderAllList(); updateWarnBanner();
 
-    // 事件委托:两个商品列表容器共用一个处理函数,避免每张卡片挂 3 个 onclick
-    document.getElementById('recentProductList').addEventListener('click', _onProductListClick);
     document.getElementById('allProductList').addEventListener('click', _onProductListClick);
+    document.getElementById('catalogList').addEventListener('click', _onCatalogListClick);
 
     document.addEventListener('click', e => {
         document.querySelectorAll('.suggestions-list').forEach(l => {
             if (!l.contains(e.target) && e.target.tagName !== 'INPUT') l.style.display = 'none';
         });
     });
-    setupAutocomplete('prodName', 'prodNameSuggest');
     setupAutocomplete('searchInput', 'searchSuggest');
     let _searchDebounce;
     document.getElementById('searchInput').addEventListener('input', () => {
         clearTimeout(_searchDebounce);
         _searchDebounce = setTimeout(renderAllList, 150);
     });
+    let _catSearchDebounce;
+    document.getElementById('catalogSearchInput').addEventListener('input', () => {
+        clearTimeout(_catSearchDebounce);
+        _catSearchDebounce = setTimeout(renderCatalogList, 150);
+    });
+    let _pickerSearchDebounce;
+    document.getElementById('catalogPickerSearch').addEventListener('input', e => {
+        clearTimeout(_pickerSearchDebounce);
+        _pickerSearchDebounce = setTimeout(() => _renderCatalogPickerResult(e.target.value), 150);
+    });
     window.addEventListener('resize', () => { if (chartInstance) chartInstance.resize(); });
-    // 在移动端/Capacitor APK 里 beforeunload 基本不触发,改用 visibilitychange + pagehide
-    // 保证用户切后台或杀进程前能落盘最后一次备份
-    // 【防御】若 10 秒内已经备份过,不再触发,避免挤掉刚刚落盘的新鲜快照
     const _flushBackup = () => {
-        if (!products.length) return;
+        if (!inventory.length && !catalog.length) return;
         if (Date.now() - _lastBackupTs < 10000) return;
         _lastBackupTs = 0;
         autoBackup();
@@ -1316,19 +1617,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (document.visibilityState === 'hidden') _flushBackup();
     });
     window.addEventListener('pagehide', _flushBackup);
-    setInterval(() => { if (products.length) autoBackup(); }, 5 * 60 * 1000);
+    setInterval(() => { if (inventory.length || catalog.length) autoBackup(); }, 5 * 60 * 1000);
 });
 
 // ================================================================
 // 导航
 // ================================================================
 function switchTab(tabId) {
-    ['add','list'].forEach(t => {
+    ['catalog','list'].forEach(t => {
         document.getElementById(`view-${t}`).classList.toggle('active', t === tabId);
         document.getElementById(`nav-${t}`).classList.toggle('active', t === tabId);
     });
-    document.getElementById('headerTitle').textContent = tabId === 'add' ? '录入' : '库存';
+    document.getElementById('headerTitle').textContent = tabId === 'catalog' ? '商品库' : '商店库存';
     if (tabId === 'list' && isAnalysisOpen) updateChart();
+    if (tabId === 'catalog') renderCatalogList();
 }
 function toggleMenu() {
     const sb = document.getElementById('sidebar'), ov = document.getElementById('overlay');
@@ -1342,108 +1644,355 @@ function saveSettings() {
     config.defUnit    = document.getElementById('defUnit').value;
     safeLSSet(sk('foodConfig'), JSON.stringify(config));
     showToast('✅ 设置已保存');
-    resetForm(); renderRecentList(); renderAllList(); updateWarnBanner();
+    renderCatalogList(); renderAllList(); updateWarnBanner();
     toggleMenu();
 }
 
 // ================================================================
-// 产品表单
+// 商品库 modal(添加/编辑商品)
 // ================================================================
-function handleFocus(el) { if (el.value === String(config.defLife) && config.defLife !== '') el.value = ''; }
-function resetForm() {
-    document.getElementById('editId').value = '';
-    document.getElementById('prodName').value = '';
-    document.getElementById('prodBarcode').value = '';
-    renderCategorySelect('其他');
-    document.getElementById('prodLocation').value = '常温';
-    document.getElementById('prodDate').value = config.defProdDate || getLocalDateStr();
-    document.getElementById('prodQty').value = '';
-    document.getElementById('shelfLife').value = config.defLife;
-    document.getElementById('timeUnit').value = config.defUnit;
-    document.getElementById('formTitle').textContent = "✏️ 填写产品信息";
-    document.getElementById('cancelBtn').style.display = 'none';
+let _editingCatId = null;
+
+function openAddProductModal(catId) {
+    _editingCatId = catId || null;
+    renderCategorySelect();
+
+    const title = document.getElementById('addProductTitle');
+    if (catId) {
+        const c = catalog.find(x => x.id === catId);
+        if (!c) { showToast('⚠️ 商品不存在'); return; }
+        title.textContent = '📝 编辑商品';
+        document.getElementById('pmName').value    = c.name;
+        document.getElementById('pmBarcode').value = c.barcode || '';
+        document.getElementById('pmCategory').value = c.category || '其他';
+        document.getElementById('pmLife').value = c.life || '';
+        document.getElementById('pmUnit').value = c.unit || 'days';
+        document.getElementById('pmNoExpiry').checked = !!c.noExpiry;
+    } else {
+        title.textContent = '+ 添加商品';
+        document.getElementById('pmName').value    = '';
+        document.getElementById('pmBarcode').value = '';
+        document.getElementById('pmCategory').value = '其他';
+        document.getElementById('pmLife').value    = config.defLife || '';
+        document.getElementById('pmUnit').value    = config.defUnit || 'days';
+        document.getElementById('pmNoExpiry').checked = false;
+    }
+    togglePmLife();
+    document.getElementById('editProductId').value = _editingCatId || '';
+    document.getElementById('addProductModal').classList.add('active');
+    setTimeout(() => { if (!catId) document.getElementById('pmName').focus(); }, 50);
 }
-function saveProduct() {
-    const name     = document.getElementById('prodName').value.trim();
-    const category = document.getElementById('prodCategory').value;
-    const location = document.getElementById('prodLocation').value;
-    const date     = document.getElementById('prodDate').value;
-    const lifeRaw  = document.getElementById('shelfLife').value;
-    const unit     = document.getElementById('timeUnit').value;
-    const editIdRaw= document.getElementById('editId').value;
-    const barcode  = (document.getElementById('prodBarcode').value || '').trim();
-    const qtyRaw   = document.getElementById('prodQty').value;
-    const qty      = qtyRaw ? Math.max(1, parseInt(qtyRaw) || 1) : 1;
-    const editId   = editIdRaw || null;   // 字符串或 null
 
-    if (!name || !lifeRaw || !date) return showToast('⚠️ 请填写完整信息！');
-    const life = parseInt(lifeRaw);
-    if (isNaN(life) || life <= 0) return showToast('⚠️ 保质期时长须为正整数');
+function closeAddProductModal() {
+    document.getElementById('addProductModal').classList.remove('active');
+    _editingCatId = null;
+}
 
-    const isDup = products.some(p => p.name === name && p.date === date && p.id !== editId);
-    if (isDup) return showToast('⚠️ 库中已存在相同名称和生产日期的记录！');
+function togglePmLife() {
+    const noExp = document.getElementById('pmNoExpiry').checked;
+    document.getElementById('pmLifeGroup').style.display = noExp ? 'none' : 'block';
+}
 
-    const expiry  = getExpiry(date, life, unit);
-    const product = { id: editId || genId(), name, barcode, category, location, date, life, unit, expiry, qty };
+function saveProductFromModal() {
+    const name    = document.getElementById('pmName').value.trim();
+    const barcode = document.getElementById('pmBarcode').value.trim();
+    const category = document.getElementById('pmCategory').value;
+    const noExpiry = document.getElementById('pmNoExpiry').checked;
+    let life = 0, unit = 'days';
+    
+    if (!name) return showToast('⚠️ 请填写商品名称');
+    
+    if (!noExpiry) {
+        const lifeRaw = document.getElementById('pmLife').value;
+        if (!lifeRaw) return showToast('⚠️ 请填写默认保质期');
+        life = parseInt(lifeRaw);
+        if (isNaN(life) || life <= 0) return showToast('⚠️ 保质期时长须为正整数');
+        unit = document.getElementById('pmUnit').value;
+    }
+
+    const editId  = document.getElementById('editProductId').value || null;
+    const key = _makeCatalogKey(name, barcode);
+    const dup = catalog.find(c => _makeCatalogKey(c.name, c.barcode) === key && c.id !== editId);
+    if (dup) return showToast('⚠️ 已存在同名同条码商品');
+
+    const now = Date.now();
+    if (editId) {
+        const idx = catalog.findIndex(c => c.id === editId);
+        if (idx === -1) { showToast('⚠️ 商品不存在'); closeAddProductModal(); return; }
+        catalog[idx] = {
+            ...catalog[idx],
+            name, barcode, category, life, unit, noExpiry,
+            updatedAt: now,
+        };
+        syncData();
+        showToast('✅ 商品已更新');
+    } else {
+        catalog.push({
+            id: 'cat_' + genId(),
+            name, barcode, category, life, unit, noExpiry,
+            createdAt: now, updatedAt: now,
+        });
+        syncData();
+        showToast(`✅ 已添加商品:${name}`);
+    }
+    closeAddProductModal();
+    renderCatalogList();
+}
+
+function editCatalog(catId) { openAddProductModal(catId); }
+
+function deleteCatalog(catId) {
+    const c = catalog.find(x => x.id === catId);
+    if (!c) return;
+    const hasBatch = inventory.some(i => i.catalogId === catId);
+    if (hasBatch) {
+        showToast('⚠️ 此商品仍有库存批次,请先清空所有批次再删除', 3500);
+        return;
+    }
+    showConfirmModal(
+        '删除商品',
+        `确定从商品库删除「${c.name}」?此操作不可撤销。`,
+        () => {
+            catalog = catalog.filter(x => x.id !== catId);
+            syncData();
+            renderCatalogList();
+            showToast('已删除');
+        }
+    );
+}
+
+// ================================================================
+// 批次 modal(添加/编辑批次)
+// ================================================================
+let _editingBatchId = null;
+let _pickedCatalogId = null;
+
+function openAddBatchModal(catalogId, batchId) {
+    _editingBatchId = batchId || null;
+    _pickedCatalogId = catalogId || null;
+
+    const title = document.getElementById('addBatchTitle');
+    if (batchId) {
+        const inv = inventory.find(i => i.id === batchId);
+        if (!inv) { showToast('⚠️ 批次不存在'); return; }
+        title.textContent = '📝 编辑批次';
+        _pickedCatalogId = inv.catalogId;
+        document.getElementById('bmDate').value = inv.date || '';
+        document.getElementById('bmQty').value  = inv.qty || 1;
+        document.getElementById('bmLocation').value = inv.location || '常温';
+        document.getElementById('bmLife').value = inv.life || '';
+        document.getElementById('bmUnit').value = inv.unit || 'days';
+    } else {
+        title.textContent = '+ 添加批次';
+        document.getElementById('bmDate').value = config.defProdDate || getLocalDateStr();
+        document.getElementById('bmQty').value  = '';
+        document.getElementById('bmLocation').value = '常温';
+        if (_pickedCatalogId) {
+            const c = catalog.find(x => x.id === _pickedCatalogId);
+            if (c) {
+                document.getElementById('bmLife').value = c.life || '';
+                document.getElementById('bmUnit').value = c.unit || 'days';
+            }
+        } else {
+            document.getElementById('bmLife').value = config.defLife || '';
+            document.getElementById('bmUnit').value = config.defUnit || 'days';
+        }
+    }
+    document.getElementById('editBatchId').value = _editingBatchId || '';
+    document.getElementById('batchCatalogId').value = _pickedCatalogId || '';
+    _updateBatchPickerUI();
+    document.getElementById('addBatchModal').classList.add('active');
+}
+
+function closeAddBatchModal() {
+    document.getElementById('addBatchModal').classList.remove('active');
+    _editingBatchId = null;
+    _pickedCatalogId = null;
+}
+
+function _updateBatchPickerUI() {
+    const hint = document.getElementById('batchPickerHint');
+    const sel  = document.getElementById('batchPickerSelected');
+    const nameEl = document.getElementById('batchPickerName');
+    const metaEl = document.getElementById('batchPickerMeta');
+    const picker = document.getElementById('batchProductPicker');
+    
+    let noExp = false;
+    
+    if (_pickedCatalogId) {
+        const c = catalog.find(x => x.id === _pickedCatalogId);
+        if (c) {
+            hint.style.display = 'none';
+            sel.style.display = 'block';
+            nameEl.textContent = c.name;
+            const unitStr = c.unit === 'days' ? '天' : c.unit === 'months' ? '个月' : '年';
+            metaEl.textContent = `${c.barcode ? '🔢 '+c.barcode+' · ' : ''}${c.category || '其他'} · ${c.noExpiry ? '无保质期' : '默认保质期 '+c.life+unitStr}`;
+            picker.classList.add('selected');
+            noExp = !!c.noExpiry;
+        }
+    } else {
+        hint.style.display = 'block';
+        sel.style.display = 'none';
+        picker.classList.remove('selected');
+    }
+    
+    document.getElementById('bmLifeGroup').style.display = noExp ? 'none' : 'block';
+    document.getElementById('bmNoExpHint').style.display = noExp ? 'block' : 'none';
+}
+
+function saveBatchFromModal() {
+    const catId = _pickedCatalogId;
+    if (!catId) return showToast('⚠️ 请先选择商品');
+    let date = document.getElementById('bmDate').value;
+    const qtyRaw = document.getElementById('bmQty').value;
+    const qty = qtyRaw ? Math.max(1, parseInt(qtyRaw) || 1) : 1;
+    const location = document.getElementById('bmLocation').value;
+    const editId = _editingBatchId;
+
+    let life = 0, unit = 'days', expiry = '', noExpiry = false;
+    const cat = catalog.find(x => x.id === catId);
+
+    // 【Bug #1 + #2 修复】
+    //   #2:无保质期批次不再把字符串'长期有效'塞进 expiry 字段,统一用 '' 代表空;
+    //       noExpiry flag 独立承载语义。这样 inv.expiry 的类型始终只有两种:YYYY-MM-DD 或 ''。
+    //   #1:无保质期批次强制 date='',且不参与 (catalogId + date) 去重。
+    //       便利店实操:调料包/日用品这类无保质期商品,一次进货可能有多箱,应允许多批次共存
+    //       (不同位置、不同数量、不同进货时间),用 createdAt 区分,date 是无意义字段。
+    if (cat && cat.noExpiry) {
+        noExpiry = true;
+        date = '';
+        expiry = '';
+    } else {
+        if (!date) return showToast('⚠️ 请填写生产日期');
+        const lifeRaw = document.getElementById('bmLife').value;
+        unit = document.getElementById('bmUnit').value;
+        if (!lifeRaw) return showToast('⚠️ 请填写保质期');
+        life = parseInt(lifeRaw);
+        if (isNaN(life) || life <= 0) return showToast('⚠️ 保质期时长须为正整数');
+        expiry = getExpiry(date, life, unit);
+    }
+
+    // 只有"有保质期"商品才做 (catalogId + date) 去重;
+    // 无保质期商品允许同商品多批次存在(店员按实际进货分批录入)
+    if (!noExpiry) {
+        const isDup = inventory.some(i =>
+            i.catalogId === catId && i.date === date && i.id !== editId
+        );
+        if (isDup) return showToast('⚠️ 此商品已有相同生产日期的批次');
+    }
+
+    const now = Date.now();
 
     if (editId) {
-        const idx = products.findIndex(p => p.id === editId);
-        if (idx !== -1) products[idx] = product;
+        const idx = inventory.findIndex(i => i.id === editId);
+        if (idx === -1) { showToast('⚠️ 批次不存在'); closeAddBatchModal(); return; }
+        inventory[idx] = {
+            ...inventory[idx],
+            catalogId: catId,
+            date, qty, location,
+            life, unit, expiry, noExpiry
+        };
+        syncData();
+        showToast('✅ 批次已更新');
     } else {
-        products.push(product);
+        inventory.push({
+            id:        genId(),
+            catalogId: catId,
+            date, qty, location,
+            status:    'active',
+            life, unit, expiry, noExpiry,
+            createdAt: now,
+        });
+        syncData();
+        showToast('✅ 批次已添加');
     }
-    syncData();
-    resetForm();
-    if (!editId) {
-        const btn = document.getElementById('saveProdBtn');
-        const old = btn.textContent;
-        btn.textContent = "✅ 保存成功！"; btn.style.backgroundColor = "#2E7D32";
-        setTimeout(() => { btn.textContent = old; btn.style.backgroundColor = "var(--primary)"; }, 1000);
-        document.getElementById('prodName').focus();
-    } else { switchTab('list'); }
+    closeAddBatchModal();
 }
-function cancelEdit() { resetForm(); switchTab('list'); }
 
-function _fillForm(p) {
-    document.getElementById('prodName').value = p.name;
-    document.getElementById('prodBarcode').value = p.barcode || '';
-    renderCategorySelect(p.category || '其他');
-    document.getElementById('prodLocation').value = p.location || '常温';
-    document.getElementById('prodQty').value = p.qty || 1;
-    document.getElementById('shelfLife').value = p.life;
-    document.getElementById('timeUnit').value = p.unit;
+function openCatalogPicker() {
+    document.getElementById('catalogPickerSearch').value = '';
+    _renderCatalogPickerResult('');
+    document.getElementById('catalogPickerModal').classList.add('active');
+    setTimeout(() => document.getElementById('catalogPickerSearch').focus(), 50);
+}
+
+function closeCatalogPicker() {
+    document.getElementById('catalogPickerModal').classList.remove('active');
+}
+
+function _renderCatalogPickerResult(kw) {
+    const box = document.getElementById('catalogPickerResult');
+    const q = (kw || '').trim().toLowerCase();
+    const matched = catalog.filter(c =>
+        !q || (c.name || '').toLowerCase().includes(q) || (c.barcode || '').includes(q)
+    );
+    matched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    box.innerHTML = '';
+    if (!matched.length) {
+        box.innerHTML = `<div class="catalog-pick-empty">${q ? '没搜到' : '商品库还是空的,先去添加商品'}</div>`;
+        return;
+    }
+    const frag = document.createDocumentFragment();
+    matched.slice(0, 50).forEach(c => {
+        const unitStr = c.unit === 'days' ? '天' : c.unit === 'months' ? '个月' : '年';
+        const lifeStr = c.noExpiry ? '无保质期' : `默认保质期 ${c.life}${unitStr}`;
+        const d = document.createElement('div');
+        d.className = 'catalog-pick-item';
+        d.innerHTML = `
+            <div class="catalog-pick-name">${escapeHtml(c.name)}</div>
+            <div class="catalog-pick-meta">${c.barcode ? '🔢 '+escapeHtml(c.barcode)+' · ' : ''}${escapeHtml(c.category || '其他')} · ${lifeStr}</div>
+        `;
+        d.addEventListener('click', () => {
+            _pickedCatalogId = c.id;
+            document.getElementById('batchCatalogId').value = c.id;
+            _updateBatchPickerUI();
+            if (!_editingBatchId && !c.noExpiry) {
+                document.getElementById('bmLife').value = c.life || '';
+                document.getElementById('bmUnit').value = c.unit || 'days';
+            }
+            closeCatalogPicker();
+        });
+        frag.appendChild(d);
+    });
+    box.appendChild(frag);
+}
+
+function newBatchFromCatalog(catId) {
+    openAddBatchModal(catId);
 }
 
 function copyProduct(id) {
-    const p = products.find(i => i.id === id);
-    if (!p) return;
-    document.getElementById('editId').value = '';
-    _fillForm(p);
-    document.getElementById('prodDate').value = getLocalDateStr();
-    document.getElementById('formTitle').textContent = `📋 复制自「${p.name}」，请确认生产日期`;
-    document.getElementById('cancelBtn').style.display = 'block';
-    switchTab('add');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    showToast('已复制，请核对生产日期后保存');
+    const inv = inventory.find(i => i.id === id);
+    if (!inv) return;
+    openAddBatchModal(inv.catalogId);
+    showToast('已选中原商品,请填写信息');
 }
 
 function editProduct(id) {
-    const p = products.find(i => i.id === id);
-    if (!p) return;
-    document.getElementById('editId').value = p.id;
-    _fillForm(p);
-    document.getElementById('prodDate').value = p.date;
-    document.getElementById('formTitle').textContent = "🔧 正在编辑记录";
-    document.getElementById('cancelBtn').style.display = 'block';
-    switchTab('add');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    openAddBatchModal(null, id);
 }
 
 function deleteProduct(id) {
     showConfirmModal("删除产品", "确定要永久删除该记录吗？", () => {
-        products = products.filter(p => p.id !== id);
+        inventory = inventory.filter(i => i.id !== id);
         syncData();
     });
+}
+
+function withdrawProduct(id) {
+    const inv = inventory.find(i => i.id === id);
+    if (!inv) return;
+    inv.status = 'withdrawn';
+    syncData();
+    showToast('已下架');
+}
+
+function restoreProduct(id) {
+    const inv = inventory.find(i => i.id === id);
+    if (!inv) return;
+    inv.status = 'active';
+    syncData();
+    showToast('已恢复上架');
 }
 
 // ================================================================
@@ -1451,11 +2000,12 @@ function deleteProduct(id) {
 // ================================================================
 function setupAutocomplete(inputId, suggestId, onSel) {
     const inp = document.getElementById(inputId), lst = document.getElementById(suggestId);
+    if (!inp || !lst) return;
     const _render = () => {
         const v = inp.value.trim().toLowerCase();
         lst.innerHTML = '';
         if (!v) { lst.style.display = 'none'; return; }
-        const m = [...new Set(products.map(p => p.name))].filter(n => n.toLowerCase().includes(v));
+        const m = [...new Set(catalog.map(c => c.name))].filter(n => n.toLowerCase().includes(v));
         if (!m.length) { lst.style.display = 'none'; return; }
         m.forEach(name => {
             const d = document.createElement('div');
@@ -1469,12 +2019,12 @@ function setupAutocomplete(inputId, suggestId, onSel) {
 }
 
 // ================================================================
-// 批量 & 分析
+// 批量 & 分析 & 待完善
 // ================================================================
 function toggleBatchMode() {
     isBatchMode = !isBatchMode;
     document.getElementById('batchPanel').style.display = isBatchMode ? 'flex' : 'none';
-    document.getElementById('btnBatch').style.backgroundColor = isBatchMode ? '#e3f2fd' : 'white';
+    document.getElementById('btnBatch').classList.toggle('chip-active-blue', isBatchMode);
     document.getElementById('selectAllCB').checked = false;
     renderAllList();
 }
@@ -1485,8 +2035,10 @@ function toggleSelectAll() {
 }
 function updateBatchDeleteBtn() {
     const cnt = document.querySelectorAll('.item-checkbox:checked').length;
-    const btn = document.getElementById('batchDeleteBtn');
-    btn.textContent = cnt > 0 ? `删除选中 ${cnt} 条` : '批量删除';
+    const delBtn = document.getElementById('batchDeleteBtn');
+    const wdBtn = document.getElementById('batchWithdrawBtn');
+    if (delBtn) delBtn.textContent = cnt > 0 ? `删除选中 (${cnt})` : '批量删除';
+    if (wdBtn) wdBtn.textContent = cnt > 0 ? `下架选中 (${cnt})` : '批量下架';
 }
 function batchDelete() {
     const checked = document.querySelectorAll('.item-checkbox:checked');
@@ -1497,7 +2049,7 @@ function batchDelete() {
         `⚠️ 即将永久删除 ${cnt} 条记录，此操作不可撤销！`,
         () => {
             const ids = new Set(Array.from(checked).map(cb => cb.dataset.id));
-            products = products.filter(p => !ids.has(p.id));
+            inventory = inventory.filter(i => !ids.has(i.id));
             document.getElementById('selectAllCB').checked = false;
             syncData();
             showToast(`已删除 ${cnt} 条记录`);
@@ -1505,15 +2057,58 @@ function batchDelete() {
         `确认删除 ${cnt} 条`
     );
 }
+
+function batchWithdraw() {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (!checked.length) return showToast('⚠️ 请先选择要下架的产品');
+    const cnt = checked.length;
+    showConfirmModal(
+        '批量下架',
+        `确认将选中的 ${cnt} 个批次下架？`,
+        () => {
+            const ids = new Set(Array.from(checked).map(cb => cb.dataset.id));
+            inventory.forEach(i => {
+                if (ids.has(i.id)) i.status = 'withdrawn';
+            });
+            document.getElementById('selectAllCB').checked = false;
+            syncData();
+            showToast(`已下架 ${cnt} 条记录`);
+        },
+        `确认下架 ${cnt} 条`
+    );
+}
+
+function toggleWithdrawnMode() {
+    // 【V9.0.2】没有任何已下架批次时,点击直接提示,不做状态切换
+    const withdrawnCount = inventory.filter(i => i.status === 'withdrawn').length;
+    if (withdrawnCount === 0) {
+        showToast('当前没有已下架的批次', 2000);
+        return;
+    }
+    isShowWithdrawn = !isShowWithdrawn;
+    showToast(isShowWithdrawn
+        ? `已显示 ${withdrawnCount} 条下架批次`
+        : '已隐藏下架批次', 1800);
+    renderAllList();
+}
+
+function togglePendingMode() {
+    const pendingCount = products.filter(p => !p.date && !p.noExpiry && p.status !== 'withdrawn').length;
+    if (pendingCount === 0 && !isShowPendingOnly) {
+        showToast('当前没有待完善批次', 2000);
+        return;
+    }
+    isShowPendingOnly = !isShowPendingOnly;
+    renderAllList();
+}
+
 function toggleAnalysis() {
     isAnalysisOpen = !isAnalysisOpen;
     document.getElementById('chartContainer').style.display = isAnalysisOpen ? 'block' : 'none';
-    document.getElementById('btnAnalysis').style.backgroundColor = isAnalysisOpen ? '#e3f2fd' : 'white';
+    document.getElementById('btnAnalysis').classList.toggle('chip-active-blue', isAnalysisOpen);
     if (isAnalysisOpen) updateChart();
 }
-// echarts 增量更新:
-// - 数据指纹(产品数+到期月分桶签名)没变就直接 return,避免 setOption 重排
-// - 数据变了只更新 series 和 xAxis.data,静态的 tooltip/grid/dataZoom 配置在首次 init 时一次性设置
+
 let _chartDataSig = null;
 let _chartInitialized = false;
 
@@ -1527,17 +2122,18 @@ function updateChart() {
         if (_chartDataSig !== 'empty') {
             chartInstance.setOption({ title: { text:'暂无数据', left:'center', top:'center', textStyle:{color:'#999',fontSize:14} }, series:[] }, {notMerge:true});
             _chartDataSig = 'empty';
-            _chartInitialized = false; // 下次有数据时重新走初始化路径
+            _chartInitialized = false; 
         }
         return;
     }
 
-    // 统计到期月分布
     const mc = {}, curYM = getLocalDateStr().substring(0,7);
-    products.forEach(p => { if (p.expiry) { const ym = p.expiry.substring(0,7); mc[ym] = (mc[ym]||0)+1; } });
+    products.forEach(p => { 
+        if (p.status === 'withdrawn' || p.noExpiry) return; 
+        if (p.expiry) { const ym = p.expiry.substring(0,7); mc[ym] = (mc[ym]||0)+1; } 
+    });
     const yms = Object.keys(mc).sort();
 
-    // 数据指纹:按键值对拼接。键值都变化时才有变化,能识别"某月过期商品数 +1/-1"的真实变化
     const sig = yms.map(ym => ym + ':' + mc[ym]).join('|');
     if (sig === _chartDataSig && _chartInitialized) return;
     _chartDataSig = sig;
@@ -1549,7 +2145,6 @@ function updateChart() {
     });
 
     if (!_chartInitialized) {
-        // 首次:设置完整配置
         chartInstance.setOption({
             title:{text:'按月过期时间分布',left:'center',textStyle:{fontSize:14}},
             tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
@@ -1561,7 +2156,6 @@ function updateChart() {
         }, {notMerge:true});
         _chartInitialized = true;
     } else {
-        // 增量:只更新会变化的 xAxis.data 和 series.data,其他配置沿用
         chartInstance.setOption({
             xAxis:{data:xd},
             series:[{data:sd}]
@@ -1570,23 +2164,30 @@ function updateChart() {
 }
 
 // ================================================================
-// 商品卡片（含待填写状态区分）
+// 商品卡片
 // ================================================================
 function createProductCard(p, todayStr, warningThreshold, todayMs, catMap, showBatchControls = true) {
     let statusClass = 'ok';
     let badgeHtml = '<span class="status-badge" style="background:#e8f5e9;color:#2e7d32">安全</span>';
-    const dateMs   = parseDateMs(p.date);
-    const expiryMs = parseDateMs(p.expiry);
-    const progress = expiryMs > dateMs ? Math.max(0, Math.min(100, ((todayMs - dateMs) / (expiryMs - dateMs)) * 100)) : 0;
-
+    let progress = 0;
     let countdownHtml = '';
 
-    if (!p.date) {
-        // 待填写状态：灰色调
+    if (p.status === 'withdrawn') {
+        statusClass = 'withdrawn';
+        badgeHtml = '<span class="status-badge" style="background:#eeeeee;color:#888">已下架</span>';
+        countdownHtml = `<span class="countdown-badge">已下架</span>`;
+    } else if (p.noExpiry) {
+        statusClass = 'ok';
+        badgeHtml = '<span class="status-badge" style="background:#e8f5e9;color:#2e7d32">无保质期</span>';
+        countdownHtml = '<span class="countdown-badge" style="background:#e8f5e9;color:#2e7d32">长期有效</span>';
+    } else if (!p.date) {
         statusClass = 'pending';
-        badgeHtml = '<span class="status-badge" style="background:#e0e0e0;color:#555">待填写</span>';
-        countdownHtml = '<span class="countdown-badge" style="background:#eeeeee;color:#666">⬆ 点击编辑补填日期</span>';
+        badgeHtml = '<span class="status-badge" style="background:#e0e0e0;color:#555">无日期</span>';
+        countdownHtml = '<span class="countdown-badge" style="background:#eeeeee;color:#666">点击编辑补填日期</span>';
     } else {
+        const dateMs   = parseDateMs(p.date);
+        const expiryMs = parseDateMs(p.expiry);
+        progress = expiryMs > dateMs ? Math.max(0, Math.min(100, ((todayMs - dateMs) / (expiryMs - dateMs)) * 100)) : 0;
         const daysLeft = diffDays(todayStr, p.expiry);
         if (p.expiry < todayStr) {
             statusClass = 'expired';
@@ -1604,12 +2205,12 @@ function createProductCard(p, todayStr, warningThreshold, todayMs, catMap, showB
     const unitMap = { days:'天', months:'个月', years:'年' };
     const catLabel = (catMap && catMap.get(p.category)) || escapeHtml(p.category || '其他');
     const qty = p.qty || 1;
-    // 仅在允许批量控件的容器(库存列表)且当前处于批量模式时才显示 checkbox
     const enableBatch = isBatchMode && showBatchControls;
     const safeId = escapeHtml(String(p.id));
     const div = document.createElement('div');
     div.className = `item ${statusClass}`;
     div.style.setProperty('--progress', `${progress}%`);
+    
     div.innerHTML = `
         <div class="item-header">
             <div class="item-title-wrapper">
@@ -1623,68 +2224,142 @@ function createProductCard(p, todayStr, warningThreshold, todayMs, catMap, showB
             <span class="tag">📍 ${escapeHtml(p.location||'常温')}</span>
             ${qty > 1 ? `<span class="tag qty-tag">📦 × ${qty}</span>` : ''}
         </div>
-        <div class="item-details">生产: ${p.date ? escapeHtml(p.date) : '<em style="color:#999">待填写</em>'} | 保质期: ${escapeHtml(String(p.life))}${escapeHtml(unitMap[p.unit]||'')}</div>
+        <div class="item-details">生产: ${p.date ? escapeHtml(p.date) : (p.noExpiry ? '-' : '<em style="color:#999">待填写</em>')} | 保质期: ${p.noExpiry ? '无' : escapeHtml(String(p.life)) + escapeHtml(unitMap[p.unit]||'')}</div>
         ${p.barcode ? `<div class="barcode-display">🔢 ${escapeHtml(p.barcode)}</div>` : ''}
-        <div class="item-expiry">${p.expiry ? '过期: ' + escapeHtml(p.expiry) : '<em style="color:#999">过期日待计算</em>'} ${countdownHtml}</div>
+        <div class="item-expiry">${p.noExpiry ? '长期有效' : (p.expiry ? '过期: ' + escapeHtml(p.expiry) : '<em style="color:#999">过期日待计算</em>')} ${countdownHtml}</div>
         <div class="item-btns" style="display:${enableBatch?'none':'flex'}">
-            <button class="btn btn-outline btn-sm" data-action="copy" data-id="${safeId}">📋 复制</button>
-            <button class="btn btn-outline btn-sm" data-action="edit" data-id="${safeId}">📝 编辑</button>
-            <button class="btn btn-danger btn-sm" data-action="delete" data-id="${safeId}">🗑️ 删除</button>
+            <div class="item-btns-left">
+                <button class="item-txt-link" data-action="edit" data-id="${safeId}">📝 编辑</button>
+                ${p.status !== 'withdrawn' ? `<button class="item-txt-link" data-action="withdraw" data-id="${safeId}">下架</button>` : ''}
+            </div>
+            ${p.status === 'withdrawn'
+              ? `<button class="item-restore-pill" data-action="restore" data-id="${safeId}">🔄 上架</button>`
+              : `<button class="item-copy-pill" data-action="copy" data-id="${safeId}">➕ 录同款</button>`
+            }
         </div>`;
+
+    // 左滑删除包装（批量模式不启用）
+    if (!enableBatch) {
+        const row = document.createElement('div');
+        row.className = 'swipe-row';
+        const delBg = document.createElement('div');
+        delBg.className = 'swipe-delete-bg';
+        delBg.innerHTML = '<span class="del-icon">🗑</span><span class="del-txt">删除</span>';
+        delBg.addEventListener('click', () => deleteProduct(p.id));
+        row.appendChild(delBg);
+        row.appendChild(div);
+        _initSwipe(div);
+        return row;
+    }
     return div;
 }
 
-// 商品卡片按钮事件委托:复制/编辑/删除统一走 data-action,避免每张卡片挂 3 个 onclick
-// 挂在两个列表容器上,而不是 document,可以减少无关冒泡触发
 function _onProductListClick(e) {
     const btn = e.target.closest('button[data-action][data-id]');
     if (!btn) return;
     const id = btn.dataset.id;
     switch (btn.dataset.action) {
-        case 'copy':   copyProduct(id); break;
-        case 'edit':   editProduct(id); break;
-        case 'delete': deleteProduct(id); break;
+        case 'copy':     copyProduct(id); break;
+        case 'edit':     editProduct(id); break;
+        case 'withdraw': withdrawProduct(id); break;
+        case 'restore':  restoreProduct(id); break;
+        case 'delete':   deleteProduct(id); break;
     }
 }
 
-function renderRecentList() {
-    const list = document.getElementById('recentProductList');
-    list.innerHTML = '';
-    if (!products.length) { list.innerHTML = `<div style="text-align:center;color:#999;padding:20px;">还没有录入任何产品</div>`; return; }
-    const ts = getLocalDateStr(), wt = getExpiry(ts, config.warnDays, 'days'), tMs = parseDateMs(ts);
-    const catMap = new Map(getAllCategories().map(c => [c.value, c.label]));
-    const sorted = [...products].sort((a,b) =>
-        String(b.id||'').localeCompare(String(a.id||''), undefined, {numeric: true})
-    );
-    const SHOW_MAX = 10;
-    // 【优化】用 DocumentFragment 一次性挂载,避免 N 次 appendChild 触发的重排
-    const frag = document.createDocumentFragment();
-    // 最近录入卡片永远展示操作按钮,不受库存页批量模式影响(传 showBatchControls=false)
-    sorted.slice(0, SHOW_MAX).forEach(p => frag.appendChild(createProductCard(p, ts, wt, tMs, catMap, false)));
-    if (sorted.length > SHOW_MAX) {
-        const link = document.createElement('div');
-        link.style.cssText = 'text-align:center;padding:14px;color:var(--primary);font-size:14px;cursor:pointer;font-weight:600;';
-        link.textContent = `查看全部 ${sorted.length} 件商品 →`;
-        link.onclick = () => { document.getElementById('sortMode').value='recent'; switchTab('list'); };
-        frag.appendChild(link);
+function _onCatalogListClick(e) {
+    const btn = e.target.closest('button[data-cat-action][data-cat-id]');
+    if (!btn) return;
+    const id = btn.dataset.catId;
+    switch (btn.dataset.catAction) {
+        case 'edit':     editCatalog(id); break;
+        case 'newBatch': newBatchFromCatalog(id); break;
+        case 'delete':   deleteCatalog(id); break;
     }
+}
+
+function renderCatalogList() {
+    const list = document.getElementById('catalogList');
+    if (!list) return;
+    const kw = (document.getElementById('catalogSearchInput').value || '').trim().toLowerCase();
+    const catF = document.getElementById('catalogCatFilter').value;
+    const noExpF = document.getElementById('catalogNoExpFilter').checked;
+
+    const { invByCatId } = _getRenderMaps();
+    const catLabelMap = new Map(getAllCategories().map(c => [c.value, c.label]));
+
+    const filtered = catalog.filter(c => {
+        if (catF && c.category !== catF) return false;
+        if (noExpF && !c.noExpiry) return false;
+        if (kw && !(c.name || '').toLowerCase().includes(kw) && !(c.barcode || '').includes(kw)) return false;
+        return true;
+    }).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    let filterCountStr = kw ? `搜索结果 (${filtered.length})` : `商品库 (${filtered.length})`;
+    document.getElementById('catalogCount').textContent = filterCountStr;
+
+    list.innerHTML = '';
+    if (!filtered.length) {
+        list.innerHTML = `<div style="text-align:center;color:#999;padding:40px 20px;">
+            ${(kw||catF||noExpF) ? '没搜到匹配的商品' : '商品库还是空的，点右上角"+ 添加商品"开始录入'}
+        </div>`;
+        return;
+    }
+
+    const frag = document.createDocumentFragment();
+    filtered.forEach(c => {
+        const unitStr = c.unit === 'days' ? '天' : c.unit === 'months' ? '个月' : '年';
+        const batches = invByCatId.get(c.id) || [];
+        const batchCount = batches.length;
+        const totalQty = batches.reduce((s, b) => s + (b.qty || 1), 0);
+        const catLabel = catLabelMap.get(c.category) || c.category || '其他';
+        const safeCatId = escapeHtml(c.id);
+
+        const statsHtml = batchCount > 0
+            ? `📦 ${batchCount} 个批次 · 共 ${totalQty} 件`
+            : '<span class="no-batch">暂无有效批次</span>';
+
+        const div = document.createElement('div');
+        div.className = 'cat-card';
+        div.innerHTML = `
+            <div class="cat-card-header">
+                <div class="cat-card-title">${escapeHtml(c.name)}</div>
+                <span class="cat-card-life-badge" style="${c.noExpiry ? 'background:#e8f5e9;color:#2e7d32' : ''}">${c.noExpiry ? '无保质期' : '保质期 ' + escapeHtml(String(c.life)) + escapeHtml(unitStr)}</span>
+            </div>
+            <div class="cat-card-tags">
+                <span class="tag">🔖 ${escapeHtml(catLabel)}</span>
+            </div>
+            ${c.barcode ? `<div class="cat-card-barcode">🔢 ${escapeHtml(c.barcode)}</div>` : ''}
+            <div class="cat-card-stats">${statsHtml}</div>
+            <div class="cat-card-btns">
+                <button class="cat-edit-link" data-cat-action="edit" data-cat-id="${safeCatId}">📝 编辑</button>
+                <button class="cat-new-batch-pill" data-cat-action="newBatch" data-cat-id="${safeCatId}">➕ 上架</button>
+            </div>
+        `;
+
+        // 左滑删除包装
+        const row = document.createElement('div');
+        row.className = 'swipe-row';
+        const delBg = document.createElement('div');
+        delBg.className = 'swipe-delete-bg';
+        delBg.innerHTML = '<span class="del-icon">🗑</span><span class="del-txt">删除</span>';
+        delBg.addEventListener('click', () => deleteCatalog(c.id));
+        row.appendChild(delBg);
+        row.appendChild(div);
+        _initSwipe(div);
+        frag.appendChild(row);
+    });
     list.appendChild(frag);
 }
 
 // ================================================================
-// 库存列表（隔离显示、动态计数）
+// 库存列表
 // ================================================================
 const PAGE_SIZE = 30;
 let _filteredCache = [];
 let _renderedCount = 0;
-// 预构建的分类 label 映射表,renderAllList 里重置一次,renderNextPage 复用不重复构建
 let _catMapCache = null;
 
-// 【搜索性能优化】为每个 product 懒缓存归一化后的搜索文本。
-// - 首次搜索时计算并挂在对象的 _search 属性上(不入库,syncData 时会被 JSON 序列化成冗余字段,
-//   但 JSON.stringify 对前缀下划线字段照常写入,所以我们在保存前剥离一次)。
-// - 商品改名/改分类/改位置后 _search 会失效,saveProduct / Excel 导入 / JSON 导入时重新分配的
-//   对象本身就是新对象,没有 _search,下次搜索时自然会重算,无需显式清理。
 function getSearchText(p) {
     if (p._search === undefined) {
         p._search = (
@@ -1704,41 +2379,43 @@ function renderAllList() {
     _renderedCount = 0;
     _catMapCache = new Map(getAllCategories().map(c => [c.value, c.label]));
 
-    // 1. 过滤逻辑：不同模式下严格分离待填写数据
-    //    使用 getSearchText(p) 缓存 name+category+location 的 lowercase 拼接,
-    //    相比每次 3 次 toLowerCase() + 3 次 includes(),热路径下显著降低 CPU 占用
-    _filteredCache = products.filter(p => {
-        const matchKw = !kw || getSearchText(p).includes(kw);
+    const pendingTotal  = products.filter(p => !p.date && !p.noExpiry && p.status !== 'withdrawn').length;
+    const activeTotal   = products.filter(p => p.status !== 'withdrawn').length;
+    const withdrawnTotal = products.filter(p => p.status === 'withdrawn').length;
 
-        if (mode === 'pending') {
-            return matchKw && !p.date; // 待填模式：只看没日期的
-        } else if (kw) {
-            return matchKw;            // 搜索模式：只要符合关键词全展示
-        } else {
-            return matchKw && !!p.date; // 正常模式：彻底隐藏没日期的
-        }
+    const btnW = document.getElementById('btnWithdrawn');
+    if (btnW) {
+        btnW.textContent = withdrawnTotal > 0 ? `👁 下架(${withdrawnTotal})` : '👁 下架';
+        btnW.classList.toggle('tool-btn-disabled', withdrawnTotal === 0 && !isShowWithdrawn);
+        btnW.classList.toggle('chip-active-blue', isShowWithdrawn);
+    }
+    const btnP = document.getElementById('btnPending');
+    if (btnP) {
+        btnP.textContent = pendingTotal > 0 ? `⏳ 待完善(${pendingTotal})` : '⏳ 待完善';
+        btnP.classList.toggle('tool-btn-disabled', pendingTotal === 0 && !isShowPendingOnly);
+        btnP.classList.toggle('chip-active-blue', isShowPendingOnly);
+    }
+
+    _filteredCache = products.filter(p => {
+        if (!isShowWithdrawn && p.status === 'withdrawn') return false;
+        if (isShowPendingOnly && (p.date || p.noExpiry)) return false; 
+        const matchKw = !kw || getSearchText(p).includes(kw);
+        return matchKw;
     });
 
-    // 2. 标题数量动态更新
-    const validTotal = products.filter(p => p.date).length;
-    if (mode === 'pending') {
-        document.getElementById('listCount').textContent = `待填日期 (${_filteredCache.length})`;
-    } else if (kw) {
+    if (kw) {
         document.getElementById('listCount').textContent = `搜索结果 (${_filteredCache.length})`;
     } else {
-        document.getElementById('listCount').textContent = `有效商品 (${validTotal})`;
+        document.getElementById('listCount').textContent = `全部 (${activeTotal}) | 待完善 (${pendingTotal})`;
     }
 
-    if (!_filteredCache.length) { 
-        list.innerHTML = `<div style="text-align:center;color:#999;padding:40px;">${mode === 'pending' ? '🎉 太棒了，所有信息已补全！' : '没搜到相关产品'}</div>`; 
-        return; 
+    if (!_filteredCache.length) {
+        list.innerHTML = `<div style="text-align:center;color:#999;padding:40px;">${kw ? '没搜到相关产品' : (isShowPendingOnly ? '太棒了，没有待完善的记录！' : '还没有相关的库存批次')}</div>`;
+        return;
     }
 
-    // 3. 排序逻辑
     if (mode === 'life') {
-        // 【优化】预先算好天数,避免 O(N log N) 次重复 getLifeInDays 调用
-        // 先 map 一次成 [{p, days}] 再排,排完再 map 回来
-        const withDays = _filteredCache.map(p => ({ p, days: getLifeInDays(p.life, p.unit) }));
+        const withDays = _filteredCache.map(p => ({ p, days: p.noExpiry ? 999999 : getLifeInDays(p.life, p.unit) }));
         withDays.sort((a, b) => currentSortOrder === 'asc' ? a.days - b.days : b.days - a.days);
         _filteredCache = withDays.map(x => x.p);
     } else {
@@ -1746,8 +2423,7 @@ function renderAllList() {
             let vA, vB;
             if      (mode==='expiry') { vA=a.expiry||'9999-12-31'; vB=b.expiry||'9999-12-31'; }
             else if (mode==='date')   { vA=a.date||'';   vB=b.date||''; }
-            else if (mode==='recent' || mode==='pending') {
-                // id 是字符串大数，必须用字符串比较(numeric 模式兼容新老 id 长度不一)
+            else if (mode==='recent') {
                 const cmp = String(b.id||'').localeCompare(String(a.id||''), undefined, {numeric: true});
                 return currentSortOrder==='asc' ? cmp : -cmp;
             }
@@ -1763,13 +2439,11 @@ function renderNextPage() {
     const list = document.getElementById('allProductList');
     const ts  = getLocalDateStr(), wt = getExpiry(ts, config.warnDays, 'days'), tMs = parseDateMs(ts);
     const end = Math.min(_renderedCount + PAGE_SIZE, _filteredCache.length);
-    // 复用 renderAllList 里预构建的分类映射表。防御性兜底:若缓存丢失则即时重建
     const catMap = _catMapCache || new Map(getAllCategories().map(c => [c.value, c.label]));
 
     const oldBtn = document.getElementById('loadMoreBtn');
     if (oldBtn) oldBtn.remove();
 
-    // 【优化】分页追加也用 DocumentFragment,PAGE_SIZE=30 条也能省下 30 次 reflow
     const frag = document.createDocumentFragment();
     for (let i = _renderedCount; i < end; i++) {
         frag.appendChild(createProductCard(_filteredCache[i], ts, wt, tMs, catMap));
@@ -1789,25 +2463,104 @@ function renderNextPage() {
 
 function toggleSortOrder() {
     currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
-    document.getElementById('sortOrderBtn').textContent = currentSortOrder === 'asc' ? '⬆️' : '⬇️';
+    const arrowEl = document.getElementById('sortArrow');
+    if (arrowEl) arrowEl.textContent = currentSortOrder === 'asc' ? '↑' : '↓';
     renderAllList();
 }
 
 // ================================================================
-// 数据同步
+// 排序底部抽屉
 // ================================================================
-// JSON.stringify 的 replacer:过滤掉临时字段(以 _ 开头的,如 _search)
-// 存盘时不落临时字段,备份/导出文件也会保持干净
+const _sortLabelMap = { expiry:'临期', date:'生产日期', recent:'最近录入', life:'保质时长' };
+
+function openSortSheet() {
+    document.getElementById('sortSheetOverlay').classList.add('active');
+    document.getElementById('sortSheet').classList.add('active');
+}
+function closeSortSheet() {
+    document.getElementById('sortSheetOverlay').classList.remove('active');
+    document.getElementById('sortSheet').classList.remove('active');
+}
+function selectSortMode(val) {
+    document.getElementById('sortMode').value = val;
+    // 更新 checkmark
+    ['expiry','date','recent','life'].forEach(v => {
+        const el = document.getElementById('ss-' + v);
+        if (el) el.classList.toggle('visible', v === val);
+    });
+    // 更新排序芯片文案
+    const lbl = document.getElementById('sortLabel');
+    if (lbl) lbl.textContent = _sortLabelMap[val] || val;
+    closeSortSheet();
+    renderAllList();
+}
+
+// ================================================================
+// 左滑删除手势
+// ================================================================
+const SWIPE_THRESHOLD = 60;    // 触发显示红色区的最小滑动距离
+const SWIPE_FULL = 80;         // 完全展开宽度(px，与 .swipe-delete-bg width 对齐)
+
+function _initSwipe(cardEl) {
+    let startX = 0, startY = 0, curX = 0, isDragging = false, opened = false;
+    const row = cardEl.parentElement;   // .swipe-row
+
+    function _reset(animated) {
+        if (!animated) cardEl.style.transition = 'none';
+        cardEl.style.transform = 'translateX(0)';
+        if (!animated) requestAnimationFrame(() => { cardEl.style.transition = ''; });
+        opened = false;
+    }
+    function _open() {
+        cardEl.style.transform = `translateX(-${SWIPE_FULL}px)`;
+        opened = true;
+    }
+
+    // 全局点别处时收起
+    document.addEventListener('click', function onDoc(e) {
+        if (opened && !row.contains(e.target)) { _reset(true); }
+    });
+
+    cardEl.addEventListener('touchstart', e => {
+        const t = e.touches[0];
+        startX = t.clientX; startY = t.clientY; curX = 0;
+        isDragging = false;
+        row.classList.remove('swiping');
+    }, { passive: true });
+
+    cardEl.addEventListener('touchmove', e => {
+        const t = e.touches[0];
+        const dx = t.clientX - startX;
+        const dy = t.clientY - startY;
+        if (!isDragging) {
+            if (Math.abs(dy) > Math.abs(dx)) return;   // 纵向滚动，放行
+            isDragging = true;
+            row.classList.add('swiping');
+        }
+        curX = Math.max(-SWIPE_FULL, Math.min(0, dx));
+        cardEl.style.transform = `translateX(${curX}px)`;
+    }, { passive: true });
+
+    cardEl.addEventListener('touchend', () => {
+        row.classList.remove('swiping');
+        if (!isDragging) return;
+        if (curX < -SWIPE_THRESHOLD) { _open(); }
+        else { _reset(true); }
+    });
+}
+// ================================================================
 function _stripTempFields(key, value) {
     if (typeof key === 'string' && key.startsWith('_')) return undefined;
     return value;
 }
 
 function syncData(withBackup = true) {
-    const saved = safeLSSet(sk('foodProducts'), JSON.stringify(products, _stripTempFields));
-    if (saved) {
+    const okCat = safeLSSet(sk('foodCatalog'),   JSON.stringify(catalog,   _stripTempFields));
+    const okInv = safeLSSet(sk('foodInventory'), JSON.stringify(inventory, _stripTempFields));
+    if (okCat && okInv) {
+        _rebuildProductsView();
         if (withBackup) { autoBackup(); updateStoreLastModified(); }
-        renderRecentList(); renderAllList(); updateWarnBanner();
+        renderCatalogList(); renderAllList(); updateWarnBanner();
     }
 }
 
@@ -1818,19 +2571,15 @@ let pendingImportRows = [];
 
 function parseExcelDate(v) {
     if (v == null || v === '') return '';
-    // Excel 的数字日期序列号(从 1900-01-01 起)
     if (typeof v === 'number') {
         const d = new Date(Math.round((v - 25569) * 86400 * 1000));
         return isNaN(d.getTime()) ? '' : getLocalDateStr(d);
     }
     const s = String(v).replace(/\//g, '-').replace(/\./g, '-').trim();
-    // 【严格校验】只接受 YYYY-M-D / YYYY-MM-DD 格式,避免 new Date('2024') 得到 2024-01-01、
-    // new Date('3') 在部分浏览器得到 2001-03-01 这类松散解析产生的假日期
     const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
     if (!m) return '';
     const y = parseInt(m[1]), mo = parseInt(m[2]), dy = parseInt(m[3]);
     if (mo < 1 || mo > 12 || dy < 1 || dy > 31) return '';
-    // 用 Date 回验一次,排除 2024-02-30 这种月日越界
     const d = new Date(y, mo - 1, dy);
     if (d.getFullYear() !== y || d.getMonth() !== mo - 1 || d.getDate() !== dy) return '';
     return getLocalDateStr(d);
@@ -1849,13 +2598,21 @@ function handleImport(e) {
             const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1 });
             if (rows.length < 2) return showToast('⚠️ 文件内容为空');
 
+            const existingKeys = new Set();
+            const catById = new Map(catalog.map(c => [c.id, c]));
+            inventory.forEach(inv => {
+                const c = catById.get(inv.catalogId);
+                if (!c || !inv.date) return;
+                existingKeys.add(_makeCatalogKey(c.name, c.barcode) + '|||' + inv.date);
+            });
+
             pendingImportRows = [];
             rows.forEach((cols, idx) => {
                 if (idx === 0 || !cols[0]) return;
                 const name    = String(cols[0]).trim();
                 const cat     = String(cols[1] != null ? cols[1] : '其他').trim();
                 const loc     = String(cols[2] != null ? cols[2] : '常温').trim();
-                const date    = parseExcelDate(cols[3]);          
+                const date    = parseExcelDate(cols[3]);
                 const lifeRaw = cols[4] != null ? String(cols[4]).trim() : '';
                 const life    = parseInt(lifeRaw);
                 const unitStr = String(cols[5] != null ? cols[5] : '天').trim();
@@ -1865,10 +2622,10 @@ function handleImport(e) {
                 const qty = cols[7] != null ? (parseInt(String(cols[7]).trim()) || 1) : 1;
 
                 const valid = !!(name && date && !isNaN(life) && life > 0);
-                const isDup = products.some(p => p.name === name && p.date === date);
+                const isDup = existingKeys.has(_makeCatalogKey(name, '') + '|||' + date);
                 pendingImportRows.push({
                     id: genId(),
-                    name, category: cat, location: loc, date, life, unit, qty,
+                    name, barcode: '', category: cat, location: loc, date, life, unit, qty,
                     expiry: valid ? getExpiry(date, life, unit) : '',
                     valid, isDup
                 });
@@ -1930,26 +2687,42 @@ function confirmImport() {
     const validRows = pendingImportRows.filter(r => r.valid);
     if (!validRows.length) { showToast('⚠️ 没有可导入的有效记录'); return; }
 
+    const now = Date.now();
+    const _rowToDb = (r) => {
+        const cat = _upsertCatalog(r.name, r.barcode || '', r.category, r.life, r.unit, false);
+        inventory.push({
+            id:        r.id,
+            catalogId: cat.id,
+            date:      r.date,
+            qty:       r.qty || 1,
+            location:  r.location || '常温',
+            status:    'active',
+            life:      r.life,
+            unit:      r.unit,
+            expiry:    r.expiry,
+            noExpiry:  false,
+            createdAt: now,
+        });
+    };
+
     if (mode === 'overwrite') {
         showConfirmModal(
             '⚠️ 覆盖导入确认',
-            `即将清空本店 ${products.length} 条现有记录，替换为文件中的 ${validRows.length} 条。此操作不可撤销！`,
+            `即将清空本店 ${inventory.length} 条现有记录，替换为文件中的 ${validRows.length} 条。此操作不可撤销！`,
             () => {
-                products = validRows.map(r => ({ id: r.id, name: r.name, category: r.category, location: r.location, date: r.date, life: r.life, unit: r.unit, expiry: r.expiry, qty: r.qty||1 }));
+                catalog = []; inventory = [];
+                validRows.forEach(_rowToDb);
                 syncData();
                 closeImportModal();
-                showToast(`✅ 覆盖导入完成，共 ${products.length} 条`, 3000);
+                showToast(`✅ 覆盖导入完成，共 ${inventory.length} 条`, 3000);
                 switchTab('list');
             },
-            `确认覆盖（清空原有 ${products.length} 条）`
+            `确认覆盖（清空原有 ${inventory.length} 条）`
         );
     } else {
         let count = 0;
         validRows.forEach(r => {
-            if (!r.isDup) {
-                products.push({ id: r.id, name: r.name, category: r.category, location: r.location, date: r.date, life: r.life, unit: r.unit, expiry: r.expiry, qty: r.qty||1 });
-                count++;
-            }
+            if (!r.isDup) { _rowToDb(r); count++; }
         });
         syncData();
         closeImportModal();
@@ -1977,7 +2750,6 @@ function checkXLSX() {
 }
 
 function downloadJson(obj, filename) {
-    // 用 _stripTempFields 剥离下划线前缀字段,导出文件保持干净(不含 _search 等运行期缓存)
     const blob = new Blob([JSON.stringify(obj, _stripTempFields, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -1988,70 +2760,53 @@ function downloadJson(obj, filename) {
     setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
 
-// ================================================================
-// 元数据包导出（JSON，仅含商品基础配置，故意剥离日期，作为填报模板使用）
-// ================================================================
-//
-// 【两种导出文件的职责区分 — 不可混淆】
-//
-//   ① 元数据包（本函数）—— "商品配置模板"
-//      只含固定属性：名称 / 保质期时长 / 单位 / 分类 / 存放位置 / 库存数量
-//      故意剥除 date（生产日期）和 expiry（到期日期）。
-//      用途：将商品列表分发给其他门店或新设备，店员导入后按
-//            实际收货日期手动填写生产日期，系统自动推算到期日。
-//
-//   ② 门店产品信息 Excel（exportToExcel）—— "完整数据台账"
-//      含所有字段，包括具体的生产日期和到期日期。
-//      用途：本店存档、手工查阅或数据备份。
-//
-// 【实现说明】
-//   Array.map() 创建新数组，逐条浅拷贝产品对象后，
-//   用 date: '' / expiry: '' 覆盖日期字段。
-//   不影响内存中正在显示的真实台账数据，只有导出文件里的日期是空的。
-//   店员端导入后，系统会将这些条目标记为"待填写"状态并在首页提示补录。
-//
-// ================================================================
-function exportJsonMetadata() {
+function exportCatalogJson() {
     try {
         const storeName = getActiveStore().name;
-
-        // 创建无日期的模板数组（不修改原始 products 数组）
-        const templateProducts = products.map(p => ({
-            ...p,         // 复制固定属性：id / name / category / location / life / unit / qty
-            date:   '',   // ⬅ 剥离生产日期（店员收货时按实际日期自行填写）
-            expiry: ''    // ⬅ 剥离到期日期（填完生产日期后由系统自动推算）
-        }));
-
         downloadJson({
-            _type:      'food-tool-metadata',
+            _type:      'food-tool-catalog',
             version:    APP_VERSION,
             exportTime: Date.now(),
             storeName,
             storeId:    activeStoreId,
-            products:   templateProducts, // ← 无日期的模板数据，非完整台账
+            catalog:    catalog, 
             config,
             customCategories
-        }, `元数据包_${storeName}_${fileTs()}.json`);
+        }, `商品库数据_${storeName}_${fileTs()}.json`);
 
-        showToast('✅ 元数据包（商品配置模板，不含日期）已导出');
+        showToast('✅ 商品库数据已导出');
     } catch(e) {
         showToast('❌ 导出失败：' + e.message, 4000);
-        console.error('exportJsonMetadata:', e);
+        console.error('exportCatalogJson:', e);
     }
 }
 
 function exportToExcel() {
     if (!checkXLSX()) return;
-    if (!products.length) return showToast('⚠️ 库中没有记录可以导出');
+    if (!inventory.length) return showToast('⚠️ 库中没有记录可以导出');
     try {
         const storeName = getActiveStore().name;
         const now    = new Date();
         const nowStr = `${getLocalDateStr(now)} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        const { catMap } = _getRenderMaps();
 
         const dataSheet = [['产品名称','条形码','分类','存放位置','生产日期','保质期时长','保质期单位','过期日期','库存数量']];
-        products.forEach(p => {
-            const u = p.unit === 'days' ? '天' : p.unit === 'months' ? '个月' : '年';
-            dataSheet.push([p.name, p.barcode||'', p.category||'其他', p.location||'常温', p.date||'', p.life, u, p.expiry, p.qty||1]);
+        inventory.forEach(inv => {
+            if (inv.status && inv.status !== 'active') return;
+            const cat = catMap.get(inv.catalogId);
+            if (!cat) return; 
+            const u = inv.unit === 'days' ? '天' : inv.unit === 'months' ? '个月' : '年';
+            dataSheet.push([
+                cat.name,
+                cat.barcode || '',
+                cat.category || '其他',
+                inv.location || '常温',
+                inv.date || '',
+                inv.noExpiry ? '无' : inv.life,
+                inv.noExpiry ? '-' : u,
+                inv.noExpiry ? '长期有效' : (inv.expiry || ''),
+                inv.qty || 1
+            ]);
         });
 
         const noteSheet = [
@@ -2061,7 +2816,7 @@ function exportToExcel() {
             ['分类',      '如：饮品、零食，可自定义'],
             ['存放位置',  '常温 / 冷藏 / 冷冻'],
             ['生产日期',  '格式：YYYY-MM-DD，导入时必填'],
-            ['保质期时长','数字，如：180'],
+            ['保质期时长','数字，如：180（无保质期商品填无或留空可能受影响）'],
             ['保质期单位','天 / 个月 / 年'],
             ['过期日期',  '自动计算，导入时可留空'],
             ['库存数量',  '默认 1'],
@@ -2069,7 +2824,7 @@ function exportToExcel() {
             ['导出信息',''],
             ['门店名称', storeName],
             ['导出时间', nowStr],
-            ['记录条数', products.length],
+            ['记录条数', dataSheet.length - 1],
             ['工具版本', APP_VERSION],
         ];
 
@@ -2086,29 +2841,6 @@ function exportToExcel() {
 
 function triggerJsonImport() { document.getElementById('jsonImportInput').click(); }
 
-// ================================================================
-// JSON 导入（元数据包 / 备份文件）
-// ================================================================
-// ================================================================
-// 【合并 vs 覆盖 的判断逻辑 — 元数据包专用】
-//
-// 核心前提：元数据包是"商品模板"，产品 id 与本店原始数据相同（从本店导出的）。
-// 因此不能用 id 判断重复，否则所有条目都会被跳过。
-//
-// 正确的去重维度：产品【名称】——同名产品是否已有"待填写"条目。
-//
-//   合并导入：
-//     - 若本店已存在某名称的"待填写"（无日期）条目 → 跳过，不重复创建。
-//     - 若该名称在本店无"待填写"条目（不管有没有已填日期的记录）→ 追加新条目。
-//     - 已填日期的记录永远保留，不受影响。
-//     - 所有新追加的条目分配全新 id，不复用文件里的 id。
-//
-//   覆盖导入（待填写区域）：
-//     - 保留本店所有已填写生产日期的记录（真实数据，不能丢）。
-//     - 删除本店现有的所有"待填写"条目。
-//     - 将文件里的全部产品以新 id 追加为新的"待填写"条目。
-//     ⚠️ "覆盖"的范围仅限待填写区域，不会动已填日期的记录。
-// ================================================================
 function handleJsonImport(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -2116,76 +2848,85 @@ function handleJsonImport(e) {
     reader.onload = function(evt) {
         try {
             const data = JSON.parse(evt.target.result);
-            if (!Array.isArray(data.products)) throw new Error('格式错误：缺少 products 字段');
+            let importCats = [];
+            
+            if (data._type === 'food-tool-catalog' && Array.isArray(data.catalog)) {
+                importCats = data.catalog;
+            } else if (data._type === 'food-tool-metadata' && Array.isArray(data.products)) {
+                // 兼容旧版 V9.0-rc2 导出的 products
+                importCats = data.products.map(p => ({
+                    name: p.name, barcode: p.barcode, category: p.category, 
+                    life: p.life, unit: p.unit, noExpiry: false
+                }));
+            } else {
+                throw new Error('无法识别的商品库数据格式，请确保是由新版系统导出。');
+            }
 
-            // 1. 解析并校验文件中的产品列表，统一剥离日期（元数据包应已无日期，双保险）
-            const validProducts = data.products.filter(p =>
-                p && typeof p === 'object' && p.name && (p.id || p.id === 0)
-            ).map(p => ({
-                id:       genId(),             // ← 始终分配新 id，避免与本店现有 id 冲突
-                name:     String(p.name),
-                category: p.category || '其他',
-                location: p.location || '常温',
-                date:     p.date || '',        // 元数据包本身无日期，这里留空
-                life:     parseInt(p.life) || 0,
-                unit:     ['days','months','years'].includes(p.unit) ? p.unit : 'days',
-                expiry:   p.expiry || '',      // 元数据包本身无到期日，这里留空
-                qty:      Math.max(1, parseInt(p.qty) || 1)
-            }));
-            const badCount = data.products.length - validProducts.length;
+            const validCount = importCats.filter(c => c && c.name).length;
+            const badCount = importCats.length - validCount;
+            if (validCount === 0) return showToast('⚠️ 文件中没有有效的商品记录');
 
-            // 2. 计算合并数量
-            //    去重维度：名称。只要本店已有该名称的"待填写"条目，就跳过。
-            const pendingNames = new Set(
-                products.filter(p => !p.date).map(p => p.name)
-            );
-            const toAdd    = validProducts.filter(p => !pendingNames.has(p.name));
-            const skipCount = validProducts.length - toAdd.length; // 因已有待填写而跳过的数量
+            let skipCount = 0, updateCount = 0, addCount = 0;
+            importCats.forEach(ic => {
+                if (!ic || !ic.name) return;
+                const key = _makeCatalogKey(ic.name, ic.barcode);
+                if (catalog.some(c => _makeCatalogKey(c.name, c.barcode) === key)) {
+                    updateCount++;
+                } else {
+                    addCount++;
+                }
+            });
 
-            // 3. 计算覆盖数量（保留已填日期，替换待填写区域）
-            const datedProducts   = products.filter(p => p.date);  // 已填日期，覆盖时保留
-            const existingPending = products.filter(p => !p.date); // 现有待填写，覆盖时清除
-
-            const typeName  = data._type === 'food-tool-metadata' ? '元数据包' : '备份文件';
+            const typeName  = '商品库数据';
             const fromStore = data.storeName || '未知门店';
-            const timeStr   = fmtDatetime(data.exportTime);
+            const timeStr   = data.exportTime ? fmtDatetime(data.exportTime) : '未知时间';
 
-            // 4. 显示弹窗，将计算好的数量和回调传入
             showJsonImportModal({
                 typeName, fromStore, timeStr,
-                totalValid:    validProducts.length,
-                toAddCount:    toAdd.length,
-                skipCount,
-                datedCount:    datedProducts.length,
-                overwritePendingCount: existingPending.length,
-                badCount,
-                onMerge: () => {
-                    // 追加：只加本店无"待填写"同名条目的产品
-                    products = [...products, ...toAdd];
+                totalValid: validCount,
+                addCount, updateCount, badCount,
+                onConfirm: (mode) => {
+                    let actualAdd = 0, actualUpdate = 0;
+                    importCats.forEach(ic => {
+                        if (!ic || !ic.name) return;
+                        const key = _makeCatalogKey(ic.name, ic.barcode);
+                        const existing = catalog.find(c => _makeCatalogKey(c.name, c.barcode) === key);
+                        if (existing) {
+                            if (mode === 'overwrite') {
+                                existing.category = ic.category || existing.category;
+                                existing.life = ic.life !== undefined ? ic.life : existing.life;
+                                existing.unit = ic.unit || existing.unit;
+                                existing.noExpiry = !!ic.noExpiry;
+                                existing.updatedAt = Date.now();
+                                actualUpdate++;
+                            }
+                        } else {
+                            catalog.push({
+                                id: 'cat_' + genId(),
+                                name: String(ic.name).trim(),
+                                barcode: (ic.barcode || '').trim(),
+                                category: ic.category || '其他',
+                                life: parseInt(ic.life) || 0,
+                                unit: ic.unit || 'days',
+                                noExpiry: !!ic.noExpiry,
+                                createdAt: Date.now(),
+                                updatedAt: Date.now()
+                            });
+                            actualAdd++;
+                        }
+                    });
                     applyJsonImportConfig(data);
                     syncData();
                     renderCategorySelect('其他'); renderCategoryManager();
-                    let msg = `✅ 合并完成：新增 ${toAdd.length} 条待填写`;
-                    if (skipCount > 0) msg += `，已有待填写跳过 ${skipCount} 条`;
-                    if (badCount  > 0) msg += `，过滤异常 ${badCount} 条`;
+                    let msg = `✅ 导入完成：新增 ${actualAdd} 条`;
+                    if (mode === 'merge') msg += `，跳过已有 ${updateCount} 条`;
+                    else msg += `，更新已有 ${actualUpdate} 条`;
                     showToast(msg, 3500);
-                    switchTab('list');
-                },
-                onOverwrite: () => {
-                    // 保留已填日期的记录，清除旧的待填写，写入文件的全部产品作为新待填写
-                    products = [...datedProducts, ...validProducts];
-                    applyJsonImportConfig(data);
-                    syncData();
-                    renderCategorySelect('其他'); renderCategoryManager();
-                    let msg = `✅ 待填写区域已重置：${validProducts.length} 条`;
-                    if (datedProducts.length > 0) msg += `，保留已填 ${datedProducts.length} 条`;
-                    if (badCount > 0) msg += `，过滤异常 ${badCount} 条`;
-                    showToast(msg, 3500);
-                    switchTab('list');
+                    switchTab('catalog');
                 }
             });
         } catch(err) {
-            showToast('❌ 文件格式不正确：' + err.message);
+            showToast('❌ 文件解析失败：' + err.message);
             console.error('handleJsonImport:', err);
         }
     };
@@ -2193,7 +2934,6 @@ function handleJsonImport(e) {
     e.target.value = '';
 }
 
-// 导入后同步 config 和自定义分类
 function applyJsonImportConfig(data) {
     if (data.config) {
         config = { ...config, ...data.config };
@@ -2203,33 +2943,20 @@ function applyJsonImportConfig(data) {
     if (data.customCategories) { customCategories = data.customCategories; saveCategories(); }
 }
 
-// JSON 导入专用弹窗（含合并/覆盖选项）
 function showJsonImportModal({ typeName, fromStore, timeStr, totalValid,
-        toAddCount, skipCount, datedCount, overwritePendingCount, badCount,
-        onMerge, onOverwrite }) {
+        addCount, updateCount, badCount, onConfirm }) {
     const modal = document.getElementById('jsonImportModal');
     if (!modal) return;
     document.getElementById('jiTitle').textContent = `导入${typeName}`;
 
     let summaryHtml = `<b>来源：</b>${escapeHtml(fromStore)}，导出于 ${escapeHtml(timeStr)}<br>`;
-    summaryHtml += `<b>文件有效条数：</b>${totalValid} 条`;
+    summaryHtml += `<b>包含商品：</b>${totalValid} 条`;
     if (badCount > 0) summaryHtml += `，<span style="color:#999">过滤异常 ${badCount} 条</span>`;
     summaryHtml += '<br>';
 
-    // 合并说明
-    summaryHtml += `<br><b style="color:#1565c0">合并时：</b>`;
-    summaryHtml += `新增 ${toAddCount} 条待填写`;
-    if (skipCount > 0)
-        summaryHtml += `，<span style="color:#888">跳过 ${skipCount} 条（已有同名待填写）</span>`;
-    summaryHtml += '<br>';
-
-    // 覆盖说明
-    summaryHtml += `<b style="color:#b71c1c">覆盖时：</b>`;
-    summaryHtml += `重置待填写为文件内容（${totalValid} 条）`;
-    if (overwritePendingCount > 0)
-        summaryHtml += `，<span style="color:#e65100">清除现有待填写 ${overwritePendingCount} 条</span>`;
-    if (datedCount > 0)
-        summaryHtml += `，<span style="color:#2e7d32">保留已填日期 ${datedCount} 条</span>`;
+    summaryHtml += `<br><b>变更预览：</b><br>`;
+    summaryHtml += `将新增 <b>${addCount}</b> 条全新记录<br>`;
+    summaryHtml += `发现 <b>${updateCount}</b> 条与库中同名（含同条码）的商品`;
 
     document.getElementById('jiSummary').innerHTML = summaryHtml;
     selectJsonImportMode('merge');
@@ -2237,10 +2964,11 @@ function showJsonImportModal({ typeName, fromStore, timeStr, totalValid,
     document.getElementById('jiConfirmBtn').onclick = () => {
         const mode = document.querySelector('input[name="jiMode"]:checked').value;
         closeJsonImportModal();
-        if (mode === 'merge') onMerge(); else onOverwrite();
+        onConfirm(mode);
     };
     modal.classList.add('active');
 }
+
 function selectJsonImportMode(mode) {
     document.querySelector(`input[name="jiMode"][value="${mode}"]`).checked = true;
     ['merge','overwrite'].forEach(m => {
@@ -2253,20 +2981,25 @@ function closeJsonImportModal() {
 
 function clearAllData() {
     const name = getActiveStore().name;
+    const cnt = inventory.length;
     showConfirmModal(
         `⚠️ 清空「${name}」所有记录`,
-        `将永久删除该门店全部 ${products.length} 条产品数据。门店本身保留，此操作不可撤销！`,
-        () => { products = []; syncData(); toggleMenu(); showToast('已清空本店所有记录'); },
-        `确认清空 ${products.length} 条`
+        `将永久删除该门店全部 ${cnt} 条产品数据。门店本身保留，此操作不可撤销！`,
+        () => {
+            catalog = []; inventory = [];
+            localStorage.removeItem(sk('foodProducts'));
+            localStorage.removeItem(sk('foodProducts_legacy'));
+            syncData();
+            toggleMenu();
+            showToast('已清空本店所有记录');
+        },
+        `确认清空 ${cnt} 条`
     );
 }
 
 // ================================================================
-// 条形码扫描模块  (V8.1 升级：国内 API + 条形码字段)
+// 条形码扫描模块
 // ================================================================
-
-/* ---------- API 配置 ---------- */
-// 支持平台：juhe(聚合数据) | shujubao(数据宝) | alicloud(阿里云市场) | custom(自定义) | none
 let _apiConfig = { platform: 'none', appKey: '', appSecret: '', customUrl: '' };
 
 const API_PLATFORM_INFO = {
@@ -2282,7 +3015,6 @@ function loadApiConfig() {
         const s = localStorage.getItem('barcodeApiConfig');
         if (s) {
             const parsed = JSON.parse(s);
-            // 解码 Base64 混淆存储的凭证
             if (parsed._obf) {
                 try { parsed.appKey    = atob(parsed.appKey    || ''); } catch(e) { parsed.appKey    = ''; }
                 try { parsed.appSecret = atob(parsed.appSecret || ''); } catch(e) { parsed.appSecret = ''; }
@@ -2297,7 +3029,6 @@ function saveApiSettings() {
     _apiConfig.appKey    = document.getElementById('apiAppKey').value.trim();
     _apiConfig.appSecret = document.getElementById('apiAppSecret').value.trim();
     _apiConfig.customUrl = document.getElementById('apiCustomUrl').value.trim();
-    // Base64 混淆存储，防止直接在开发者工具/浏览器存储里看到明文凭证
     localStorage.setItem('barcodeApiConfig', JSON.stringify({
         platform:  _apiConfig.platform,
         customUrl: _apiConfig.customUrl,
@@ -2320,7 +3051,6 @@ function onApiPlatformChange() {
     if (urlWrap)    urlWrap.style.display    = info.needUrl    ? '' : 'none';
     document.getElementById('apiKeyRow').style.display = p === 'none' ? 'none' : '';
     document.getElementById('apiCorsTip').textContent  = info.tip;
-    // 根据平台动态更新标签文字和占位符
     const keyLabel    = document.getElementById('apiKeyLabel');
     const secretLabel = document.getElementById('apiSecretLabel');
     if (p === 'alicloud') {
@@ -2367,13 +3097,11 @@ function initApiSettingsUI() {
     updateApiStatusBadge();
 }
 
-/* ---------- 状态变量 ---------- */
 let _scannerStream = null;
 let _zxingReader   = null;
 let _nativeTimer   = null;
 let _scannerOpen   = false;
 
-/* ---------- ZXing 懒加载 ---------- */
 let _zxingPromise = null;
 function _loadZXing() {
     if (window.ZXing) return Promise.resolve();
@@ -2388,9 +3116,10 @@ function _loadZXing() {
     return _zxingPromise;
 }
 
-/* ---------- 打开扫描器 ---------- */
-async function openScanner() {
+let _scannerScene = 'product';  
+async function openScanner(scene) {
     if (_scannerOpen) return;
+    _scannerScene = scene;
     _scannerOpen = true;
     document.getElementById('scannerModal').classList.add('active');
     _setScannerStatus('scanning', '正在启动摄像头…');
@@ -2422,7 +3151,6 @@ async function openScanner() {
     }
 }
 
-/* ---------- 原生 BarcodeDetector ---------- */
 function _startNativeDetector(video) {
     _setScannerStatus('scanning', '扫描中…');
     const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e','qr_code','data_matrix'] });
@@ -2441,7 +3169,6 @@ function _startNativeDetector(video) {
     _nativeTimer = requestAnimationFrame(tick);
 }
 
-/* ---------- ZXing 降级 ---------- */
 function _startZXingDetector(video) {
     const hints = new Map();
     hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
@@ -2459,7 +3186,6 @@ function _startZXingDetector(video) {
     });
 }
 
-/* ---------- 关闭扫描器 ---------- */
 function closeScanner() {
     _scannerOpen = false;
     if (_nativeTimer) { cancelAnimationFrame(_nativeTimer); _nativeTimer = null; }
@@ -2470,87 +3196,136 @@ function closeScanner() {
     document.getElementById('scannerModal').classList.remove('active');
 }
 
-/* ---------- 识别成功回调 ---------- */
 async function _onCodeDetected(code) {
     if (!_scannerOpen) return;
     closeScanner();
     showToast('✅ 已扫描：' + code, 2000);
 
-    // 条形码字段直接填入
-    const barcodeInput = document.getElementById('prodBarcode');
-    if (barcodeInput) barcodeInput.value = code;
-
-    const nameInput = document.getElementById('prodName');
-    nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    // 如果未配置 API，直接结束
-    if (_apiConfig.platform === 'none' || !_apiConfig.appKey) {
-        showToast('条码已填入，请手动输入商品名', 2500);
-        nameInput.focus();
+    // 1. 搜索框内嵌扫码
+    if (_scannerScene === 'search-catalog') {
+        const inp = document.getElementById('catalogSearchInput');
+        if (inp) { inp.value = code; inp.dispatchEvent(new Event('input', { bubbles: true })); }
+        return;
+    }
+    if (_scannerScene === 'search-list') {
+        const inp = document.getElementById('searchInput');
+        if (inp) { inp.value = code; inp.dispatchEvent(new Event('input', { bubbles: true })); }
+        return;
+    }
+    if (_scannerScene === 'search-picker') {
+        const inp = document.getElementById('catalogPickerSearch');
+        if (inp) { inp.value = code; inp.dispatchEvent(new Event('input', { bubbles: true })); }
         return;
     }
 
-    nameInput.placeholder = '查询商品名称…';
-    try {
-        const info = await _lookupBarcode(code);
-        if (info && info.name) {
-            nameInput.value = info.name;
-            showToast('📦 已填入：' + info.name);
-            nameInput.dispatchEvent(new Event('input', { bubbles: true }));
-        } else {
-            // 根据 reason 显示具体原因，并在控制台打印 detail 供进一步排查
-            const reason = info?.reason || 'unknown';
-            const detail = info?.detail || '';
-            console.warn('[条码查询] 失败 reason=' + reason, detail);
-            const toastMap = {
-                bad_action: '❌ 接口名错误（InvalidAction.NotFound）—— 检查 API 配置',
-                quota:      '❌ 额度用完或未购买服务（QuotaExceeded）',
-                auth:       '❌ 认证失败，检查 AppKey / AppSecret 是否正确',
-                not_found:  '📭 条码库无此商品（DataNotFound），请手动填写',
-                cors:       '⚠️ 浏览器 CORS 拦截，APP 版本可正常使用',
-                timeout:    '⏱ 查询超时，请重试',
-            };
-            showToast(toastMap[reason] || ('查询失败：' + detail), 4500);
+    const hit = catalog.find(c => (c.barcode || '').trim() === code.trim());
+
+    // 2. 添加/编辑 商品表单扫码
+    if (_scannerScene === 'product') {
+        const barcodeInput = document.getElementById('pmBarcode');
+        const nameInput = document.getElementById('pmName');
+        if (barcodeInput) barcodeInput.value = code;
+        
+        if (hit) {
+            if (nameInput) nameInput.value = hit.name;
+            document.getElementById('pmCategory').value = hit.category || '其他';
+            document.getElementById('pmLife').value = hit.life || '';
+            document.getElementById('pmUnit').value = hit.unit || 'days';
+            document.getElementById('pmNoExpiry').checked = !!hit.noExpiry;
+            togglePmLife();
+            showToast('📦 库中已存在，已自动填入');
+            return;
         }
-    } catch(e) {
-        showToast('查询失败，请手动填写商品名', 3000);
-        console.warn('barcode lookup error:', e);
+
+        if (_apiConfig.platform === 'none' || !_apiConfig.appKey) {
+            showToast('条码已填入，请手动完善商品信息', 2500);
+            return;
+        }
+
+        showToast('新商品查询中...', 1000);
+        try {
+            const info = await _lookupBarcode(code);
+            if (info && info.name) {
+                if (nameInput) {
+                    nameInput.value = info.name;
+                    nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                showToast('📦 已填入：' + info.name);
+            } else {
+                _handleApiErrorToast(info);
+            }
+        } catch(e) {
+            showToast('查询失败，请手动完善商品信息', 3000);
+            console.warn('barcode lookup error:', e);
+        }
+        return;
     }
-    nameInput.placeholder = '产品名称 (如: 鲜奶)';
-    nameInput.focus();
+
+    // 3. 添加/编辑 批次表单扫码
+    if (_scannerScene === 'batch') {
+        if (hit) {
+            _selectCatalogForBatch(hit);
+            showToast('📦 已选中:' + hit.name, 2500);
+            return;
+        }
+
+        if (_apiConfig.platform === 'none' || !_apiConfig.appKey) {
+            showToast('⚠️ 库中无此条码，请先去手动添加商品', 3500);
+            return;
+        }
+
+        showToast('新商品查询中...', 1000);
+        try {
+            const info = await _lookupBarcode(code);
+            if (info && info.name) {
+                const life = parseInt(config.defLife) || 180;
+                const unit = config.defUnit || 'days';
+                const newCat = _upsertCatalog(info.name, code, '其他', life, unit, false);
+                syncData();
+                _selectCatalogForBatch(newCat);
+                showToast('✨ 已自动建档并选中：' + info.name);
+            } else {
+                _handleApiErrorToast(info);
+                showToast('⚠️ 未查到商品名，请先去手动添加商品', 3500);
+            }
+        } catch(e) {
+            showToast('查询失败，请先手动添加商品', 3000);
+            console.warn('barcode lookup error:', e);
+        }
+        return;
+    }
 }
 
-/* ---------- 阿里云 API 网关 HMAC-SHA256 签名（AppKey + AppSecret 模式）----------
-   当同时填写了 AppKey 和 AppSecret 时自动使用签名认证；
-   仅填 AppKey（即 AppCode）时退回到简单 APPCODE 认证（适用于云市场服务）。
----------------------------------------------------------------------------*/
-async function _alicloudSign(method, path, queryStr, appKey, appSecret) {
-    const date   = new Date().toUTCString();
-    const accept = 'application/json';
-    const strToSign = [method.toUpperCase(), accept, '', '', date,
-                       path + (queryStr ? '?' + queryStr : '')].join('\n');
-    const enc = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-        'raw', enc.encode(appSecret),
-        { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-    );
-    const sig    = await crypto.subtle.sign('HMAC', key, enc.encode(strToSign));
-    const b64    = btoa(String.fromCharCode(...new Uint8Array(sig)));
-    return { 'Authorization': `acs ${appKey}:${b64}`, 'Date': date, 'Accept': accept };
+function _selectCatalogForBatch(cat) {
+    _pickedCatalogId = cat.id;
+    document.getElementById('batchCatalogId').value = cat.id;
+    _updateBatchPickerUI();
+    if (!_editingBatchId && !cat.noExpiry) {
+        document.getElementById('bmLife').value = cat.life || '';
+        document.getElementById('bmUnit').value = cat.unit || 'days';
+    }
 }
 
-/* ---------- 国内条码查询（纯国内接口，无需 VPN）----------ー
-   注意：浏览器直接调用第三方 API 受 CORS 限制。
-   在 Capacitor APP 环境中没有此限制，可正常使用。
-   浏览器端如遇 CORS 报错，属平台限制，需 APP 版本才能完整使用。
----------------------------------------------------------------*/
+function _handleApiErrorToast(info) {
+    const reason = info?.reason || 'unknown';
+    const detail = info?.detail || '';
+    console.warn('[条码查询] 失败 reason=' + reason, detail);
+    const toastMap = {
+        bad_action: '❌ 接口名错误——检查 API 配置',
+        quota:      '❌ 额度用完或未购买服务',
+        auth:       '❌ 认证失败，检查 Key',
+        not_found:  '📭 条码库无此商品，请手动填写',
+        cors:       '⚠️ 浏览器拦截，APP 版本可正常使用',
+        timeout:    '⏱ 查询超时，请重试',
+    };
+    showToast(toastMap[reason] || ('查询失败：' + detail), 4500);
+}
+
 async function _lookupBarcode(code) {
     const { platform, appKey, appSecret, customUrl } = _apiConfig;
     let url = '', headers = {}, parseResult = null;
 
     if (platform === 'juhe') {
-        // 聚合数据 条形码查询 API
-        // 文档: https://www.juhe.cn/docs/api/id/47
         url = `https://www.juheapi.com/barcode/index?key=${encodeURIComponent(appKey)}&barcode=${encodeURIComponent(code)}`;
         parseResult = data => {
             if (data.error_code !== 0 || !data.result) return null;
@@ -2560,10 +3335,7 @@ async function _lookupBarcode(code) {
             if (!name) return null;
             return { name: (brand && !name.startsWith(brand)) ? brand + ' ' + name : name };
         };
-
     } else if (platform === 'shujubao') {
-        // 数据宝 条形码查询 API
-        // 文档: https://www.shujubaobei.com
         url = `https://api.shujubaobei.com/2.0/barcode?app_key=${encodeURIComponent(appKey)}&code=${encodeURIComponent(code)}`;
         parseResult = data => {
             if (!data || data.code !== 200) return null;
@@ -2572,9 +3344,7 @@ async function _lookupBarcode(code) {
             if (!name) return null;
             return { name };
         };
-
     } else if (platform === 'alicloud') {
-        // 阿里云市场：POST 接口，条码放 Body，AppCode 放 Header
         if (!customUrl) return { name: null, reason: 'bad_action', detail: '未填写接口请求地址' };
         const aliUrl = customUrl.replace('{code}', '').replace('{key}', '');
         const appCode = appSecret || appKey;
@@ -2599,7 +3369,6 @@ async function _lookupBarcode(code) {
                 return { name: null, reason, detail: `HTTP ${r.status}: ${errText.slice(0, 120)}` };
             }
             const data = await r.json();
-            console.info('[条码查询-阿里云] 原始响应:', JSON.stringify(data));
             const d = data.result || data.data || data;
             const name = (d.goodsName || d.goods_name || d.name || d.product_name || d.goodName || '').trim();
             if (name) return { name };
@@ -2610,14 +3379,11 @@ async function _lookupBarcode(code) {
             if (e.message && e.message.includes('Failed to fetch')) return { name: null, reason: 'cors', detail: 'CORS 拦截' };
             return { name: null, reason: 'network', detail: e.message };
         }
-        /* eslint-disable no-unreachable */
         parseResult = () => null;
-
     } else if (platform === 'custom') {
         if (!customUrl) return null;
         url = customUrl.replace('{key}', encodeURIComponent(appKey)).replace('{code}', encodeURIComponent(code));
         parseResult = data => {
-            // 自动匹配常见商品名字段
             const r = data.result || data.data || data;
             const name = (r.goodsName || r.goods_name || r.name || r.product_name ||
                           r.goodName  || r.good_name  || r.title || '').trim();
@@ -2633,7 +3399,6 @@ async function _lookupBarcode(code) {
     try {
         const r = await fetch(url, { signal: ctrl.signal, headers });
         clearTimeout(timer);
-        // ── HTTP 层错误（4xx / 5xx）──
         if (!r.ok) {
             const errText = await r.text().catch(() => '');
             console.warn('[条码查询] HTTP 错误', r.status, errText);
@@ -2641,10 +3406,8 @@ async function _lookupBarcode(code) {
             return { name: null, reason, detail: `HTTP ${r.status}: ${errText.slice(0, 120)}` };
         }
         const data = await r.json();
-        console.info('[条码查询] 原始响应:', JSON.stringify(data));   // 调试用，可在浏览器控制台查看
         const result = parseResult(data);
         if (result) return result;
-        // ── HTTP 200 但没拿到商品名，解析具体原因 ──
         return _diagnoseApiNull(data);
     } catch(e) {
         clearTimeout(timer);
@@ -2656,12 +3419,7 @@ async function _lookupBarcode(code) {
     }
 }
 
-/* ---------- 解析 API 返回的错误原因（HTTP 200 但无商品名时）----------
-   覆盖阿里云、聚合数据、数据宝等常见错误码格式。
-   返回 { name:null, reason, detail } 供上层显示友好提示。
--------------------------------------------------------------------- */
 function _diagnoseApiNull(data) {
-    // 提取各平台可能的错误码/消息字段
     const code    = String(data?.code    ?? data?.error_code ?? data?.resultCode ??
                            data?.Code    ?? data?.errCode    ?? data?.status     ?? '');
     const msg     = String(data?.message ?? data?.msg        ?? data?.reason     ??
@@ -2671,31 +3429,24 @@ function _diagnoseApiNull(data) {
 
     if (codeLo.includes('invalidaction') || codeLo.includes('notfound') ||
         msgLo.includes('invalid action') || msgLo.includes('not found'))
-        return { name: null, reason: 'bad_action',
-                 detail: `接口名/路径错误 (${code || 'InvalidAction.NotFound'})：${msg}` };
+        return { name: null, reason: 'bad_action', detail: `接口名/路径错误 (${code || 'InvalidAction.NotFound'})：${msg}` };
 
     if (codeLo.includes('quota') || codeLo.includes('exceed') ||
         msgLo.includes('quota')  || msgLo.includes('超出')    || msgLo.includes('用尽'))
-        return { name: null, reason: 'quota',
-                 detail: `额度超限 (${code || 'QuotaExceeded'})：${msg}` };
+        return { name: null, reason: 'quota', detail: `额度超限 (${code || 'QuotaExceeded'})：${msg}` };
 
     if (codeLo.includes('unauthorized') || codeLo.includes('forbidden') ||
         codeLo.includes('auth')         || codeLo.includes('invalid_key') ||
         msgLo.includes('unauthorized')  || msgLo.includes('appcode'))
-        return { name: null, reason: 'auth',
-                 detail: `认证失败 (${code})：${msg}` };
+        return { name: null, reason: 'auth', detail: `认证失败 (${code})：${msg}` };
 
-    // 正常返回但条码库里没有（各平台成功码不同）
     const successCodes = ['0', '200', 'success', 'ok', 'succ'];
     if (successCodes.includes(codeLo) || successCodes.includes(code))
         return { name: null, reason: 'not_found', detail: 'DataNotFound：条码库无此商品记录' };
 
-    // 未知情况：把原始 JSON 截断后当作 detail 输出
-    return { name: null, reason: 'api_error',
-             detail: code ? `${code}: ${msg}` : JSON.stringify(data).slice(0, 150) };
+    return { name: null, reason: 'api_error', detail: code ? `${code}: ${msg}` : JSON.stringify(data).slice(0, 150) };
 }
 
-/* ---------- 工具函数 ---------- */
 function _setScannerStatus(type, text) {
     const el = document.getElementById('scannerStatus');
     if (!el) return;
@@ -2705,7 +3456,178 @@ function _setScannerStatus(type, text) {
 
 </script>
 
-<!-- ── 条形码扫描弹窗 ── -->
+<div class="modal-overlay-ui" id="addProductModal">
+    <div class="form-modal-card">
+        <div class="form-modal-header">
+            <h3 id="addProductTitle">+ 添加商品</h3>
+            <button class="form-modal-close" onclick="closeAddProductModal()">✕</button>
+        </div>
+        <div class="form-modal-body">
+            <input type="hidden" id="editProductId">
+
+            <div class="form-group autocomplete-wrapper">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">商品名称 *</label>
+                <div class="scan-input-wrapper">
+                    <input type="text" id="pmName" placeholder="如:伊利纯牛奶" autocomplete="off">
+                    <button class="scan-trigger-btn" onclick="openScanner('product')" title="扫描条形码" type="button" aria-label="扫描条形码">
+                        <svg viewBox="0 0 22 22" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 6V2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 6V2h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M1 16v4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 16v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="5" y1="7.5" x2="5" y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            <line x1="7" y1="7.5" x2="7" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="9.5" y1="7.5" x2="9.5" y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            <line x1="11.5" y1="7.5" x2="11.5" y2="14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <line x1="13.5" y1="7.5" x2="13.5" y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            <line x1="15.5" y1="7.5" x2="15.5" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="17" y1="7.5" x2="17" y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">条形码(可选)</label>
+                <input type="text" id="pmBarcode" placeholder="扫码自动填入,也可手输" autocomplete="off" inputmode="numeric" style="font-family:monospace;letter-spacing:1px;">
+                <div class="form-hint">同名不同条码视为两个独立商品</div>
+            </div>
+
+            <div class="form-group">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">分类</label>
+                <select id="pmCategory"></select>
+            </div>
+
+            <div class="form-group" style="padding-top:6px; padding-bottom:6px;">
+                <label style="display:flex;align-items:center;font-size:14px;color:#222;font-weight:600;cursor:pointer;">
+                    <input type="checkbox" id="pmNoExpiry" onchange="togglePmLife()" style="width:18px;height:18px;margin-right:8px;accent-color:var(--primary);">
+                    该商品无保质期 (如水杯、五金等)
+                </label>
+            </div>
+
+            <div class="form-group" id="pmLifeGroup">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">默认保质期 *</label>
+                <div class="duration-input">
+                    <input type="number" id="pmLife" placeholder="时长" style="flex:2;">
+                    <select id="pmUnit" style="flex:1;">
+                        <option value="days">天</option><option value="months">个月</option><option value="years">年</option>
+                    </select>
+                </div>
+                <div class="form-hint">上架时的默认值,可在批次 modal 里覆盖</div>
+            </div>
+        </div>
+        <div class="form-modal-footer">
+            <button class="btn btn-outline" style="flex:1" onclick="closeAddProductModal()">取消</button>
+            <button class="btn btn-primary" style="flex:2" onclick="saveProductFromModal()">保存</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay-ui" id="addBatchModal">
+    <div class="form-modal-card">
+        <div class="form-modal-header">
+            <h3 id="addBatchTitle">+ 添加批次</h3>
+            <button class="form-modal-close" onclick="closeAddBatchModal()">✕</button>
+        </div>
+        <div class="form-modal-body">
+            <input type="hidden" id="editBatchId">
+            <input type="hidden" id="batchCatalogId">
+
+            <div class="form-group">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">商品 *</label>
+                <div class="batch-product-picker" id="batchProductPicker" onclick="openCatalogPicker()">
+                    <span class="picker-hint" id="batchPickerHint">点击选择商品,或扫码查找</span>
+                    <div style="flex:1;display:none;" id="batchPickerSelected">
+                        <div class="picker-name" id="batchPickerName"></div>
+                        <div class="picker-meta" id="batchPickerMeta"></div>
+                    </div>
+                    <button class="scan-trigger-btn" style="position:static;transform:none;" onclick="event.stopPropagation();openScanner('batch')" title="扫描条形码" type="button">
+                        <svg viewBox="0 0 22 22" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 6V2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 6V2h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M1 16v4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 16v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="7" y1="7.5" x2="7" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="11.5" y1="7.5" x2="11.5" y2="14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <line x1="15.5" y1="7.5" x2="15.5" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <span class="picker-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="form-group duration-input">
+                <div style="flex:1;margin:0;">
+                    <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">生产日期</label>
+                    <input type="date" id="bmDate">
+                </div>
+                <div style="flex:1;margin:0;">
+                    <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">库存数量</label>
+                    <input type="number" id="bmQty" placeholder="1" min="1">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">存放位置</label>
+                <select id="bmLocation">
+                    <option value="常温">常温</option>
+                    <option value="冷藏">冷藏</option>
+                    <option value="冷冻">冷冻</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="bmLifeGroup">
+                <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">保质期 *</label>
+                <div class="duration-input">
+                    <input type="number" id="bmLife" placeholder="时长" style="flex:2;">
+                    <select id="bmUnit" style="flex:1;">
+                        <option value="days">天</option><option value="months">个月</option><option value="years">年</option>
+                    </select>
+                </div>
+                <div class="form-hint form-hint-snapshot">此批次保质期独立保存,修改商品库不会影响它</div>
+            </div>
+            <div class="form-group" id="bmNoExpHint" style="display:none;padding:12px;background:#e8f5e9;border-radius:8px;color:#2e7d32;font-size:13px;">
+                🔖 此商品已标记为“无保质期”，无需填写过期相关信息。
+            </div>
+        </div>
+        <div class="form-modal-footer">
+            <button class="btn btn-outline" style="flex:1" onclick="closeAddBatchModal()">取消</button>
+            <button class="btn btn-primary" style="flex:2" onclick="saveBatchFromModal()">保存</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay-ui" id="catalogPickerModal">
+    <div class="form-modal-card">
+        <div class="form-modal-header">
+            <h3>选择商品</h3>
+            <button class="form-modal-close" onclick="closeCatalogPicker()">✕</button>
+        </div>
+        <div class="form-modal-body catalog-search-modal-body">
+            <div class="search-container scan-input-wrapper" style="margin-bottom:0;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="catalogPickerSearch" placeholder="搜索名称或条码" autocomplete="off">
+                <button class="scan-trigger-btn" onclick="openScanner('search-picker')" title="扫描条形码" type="button" aria-label="扫描条形码">
+                    <svg viewBox="0 0 22 22" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 6V2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 6V2h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M1 16v4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 16v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="7" y1="7.5" x2="7" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="11.5" y1="7.5" x2="11.5" y2="14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <line x1="15.5" y1="7.5" x2="15.5" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="catalog-search-result" id="catalogPickerResult"></div>
+        </div>
+        <div class="form-modal-footer">
+            <button class="btn btn-outline" style="flex:1" onclick="closeCatalogPicker()">取消</button>
+            <button class="btn btn-primary" style="flex:1" onclick="closeCatalogPicker();openAddProductModal()">+ 新建商品</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay-ui" id="scannerModal">
     <div class="scanner-card">
         <div class="scanner-hd">
@@ -2731,5 +3653,17 @@ function _setScannerStatus(type, text) {
         </div>
     </div>
 </div>
+<!-- 排序底部抽屉 -->
+<div class="sort-sheet-overlay" id="sortSheetOverlay" onclick="closeSortSheet()"></div>
+<div class="sort-sheet" id="sortSheet">
+    <div class="sort-sheet-handle"></div>
+    <div class="sort-sheet-title">选择排序方式</div>
+    <button class="sort-sheet-item" data-sort-val="expiry" onclick="selectSortMode('expiry')">⏳ 临期优先 <span class="sort-sheet-check visible" id="ss-expiry">✓</span></button>
+    <button class="sort-sheet-item" data-sort-val="date"   onclick="selectSortMode('date')">🆕 生产日期 <span class="sort-sheet-check" id="ss-date">✓</span></button>
+    <button class="sort-sheet-item" data-sort-val="recent" onclick="selectSortMode('recent')">🕒 最近录入 <span class="sort-sheet-check" id="ss-recent">✓</span></button>
+    <button class="sort-sheet-item" data-sort-val="life"   onclick="selectSortMode('life')">⏱️ 保质时长 <span class="sort-sheet-check" id="ss-life">✓</span></button>
+    <button class="sort-sheet-cancel" onclick="closeSortSheet()">取消</button>
+</div>
+
 </body>
 </html>
