@@ -3,7 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>食品效期助手 V9.0</title>
+    <!-- Chrome 双模 theme-color：浏览器工具栏颜色跟随系统 -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#1e1e1e">
+    <!-- 单值 fallback，由 JS 动态覆盖 -->
+    <meta name="theme-color" id="themeColorMeta" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>食品效期助手 V9.2</title>
+    <!-- 主题初始化：在页面渲染前执行，防止白屏闪烁，并同步修正 theme-color -->
+    <script>
+    (function(){
+        const saved = localStorage.getItem('foodTheme') || 'system';
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isDark = saved === 'dark' || (saved === 'system' && prefersDark);
+        if (isDark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        // 非"跟随系统"时，用单值 meta 强制覆盖 Chrome 工具栏颜色
+        if (saved !== 'system') {
+            const meta = document.getElementById('themeColorMeta');
+            if (meta) meta.setAttribute('content', isDark ? '#1e1e1e' : '#ffffff');
+        }
+    })();
+    </script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
@@ -15,14 +38,178 @@
             --border:    #e0e0e0;
             --warn-bg:   #fffde7; --warn-txt:  #f57f17;
             --exp-bg:    #ffebee; --exp-txt:   #c62828;
+            /* 扩展变量 */
+            --card2:     #f5f5f5;
+            --input-bg:  #fafafa;
+            --input-border: #ccc;
+            --shadow:    rgba(0,0,0,.06);
+            --overlay:   rgba(0,0,0,.6);
+            --sheet-bg:  #fff;
+            --nav-bg:    #fff;
+            --sidebar-bg:#fff;
+            --tag-bg:    #eee;    --tag-txt:  #555;
+            --badge-ok-bg:#e8f5e9;  --badge-ok-txt:#2e7d32;
+            --badge-warn-bg:#fff3e0; --badge-warn-txt:#e65100;
+            --badge-exp-bg:#ffebee;  --badge-exp-txt:#c62828;
+            --badge-neu-bg:#eeeeee;  --badge-neu-txt:#888;
+            --chip-bg:   #f0f0f0;
+            --modal-card-bg: #fff;
+            --picker-bg: #fafafa;
+            --store-btn-bg: #f0f7f0; --store-btn-border: #c8e6c9;
         }
+
+        /* ── 深色主题 ── */
+        [data-theme="dark"] {
+            --primary:   #4CAF50; --primary-dk: #81C784;
+            --blue:      #64B5F6;
+            --bg:        #121212; --card:  #1e1e1e;
+            --txt:       #e0e0e0; --sub:   #999;
+            --border:    #2e2e2e;
+            --warn-bg:   #2a1f00; --warn-txt:  #FFB74D;
+            --exp-bg:    #2a0a0a; --exp-txt:   #EF9A9A;
+            --card2:     #252525;
+            --input-bg:  #2a2a2a;
+            --input-border: #3a3a3a;
+            --shadow:    rgba(0,0,0,.3);
+            --overlay:   rgba(0,0,0,.75);
+            --sheet-bg:  #1e1e1e;
+            --nav-bg:    #1e1e1e;
+            --sidebar-bg:#1e1e1e;
+            --tag-bg:    #2e2e2e; --tag-txt:  #bbb;
+            --badge-ok-bg:#1a2e1a;   --badge-ok-txt:#81C784;
+            --badge-warn-bg:#2a1e00; --badge-warn-txt:#FFB74D;
+            --badge-exp-bg:#2a0a0a;  --badge-exp-txt:#EF9A9A;
+            --badge-neu-bg:#2e2e2e;  --badge-neu-txt:#888;
+            --chip-bg:   #2a2a2a;
+            --modal-card-bg: #1e1e1e;
+            --picker-bg: #2a2a2a;
+            --store-btn-bg: #1a2e1a; --store-btn-border: #2e5e2e;
+        }
+
+        /* 深色：硬编码颜色逐一覆盖 */
+        [data-theme="dark"] body { color-scheme: dark; }
+        [data-theme="dark"] input,
+        [data-theme="dark"] select {
+            background: var(--input-bg); color: var(--txt);
+            border-color: var(--input-border);
+        }
+        [data-theme="dark"] input:focus,
+        [data-theme="dark"] select:focus { background: var(--card); border-color: var(--primary); }
+        [data-theme="dark"] .item { background: var(--card); border-color: var(--border); }
+        [data-theme="dark"] .item.warn     { background: var(--warn-bg); }
+        [data-theme="dark"] .item.expired  { background: var(--exp-bg); }
+        [data-theme="dark"] .item.pending  { background: #1a1a1a; border-color: var(--border); }
+        [data-theme="dark"] .item.withdrawn{ background: #1a1a1a; border-color: var(--border); }
+        [data-theme="dark"] .item-title    { color: #e0e0e0; }
+        [data-theme="dark"] .item.withdrawn .item-title { color: #666; }
+        [data-theme="dark"] .tag  { background: var(--tag-bg); color: var(--tag-txt); }
+        [data-theme="dark"] .tag.qty-tag { background: #1a2a3e; color: #90CAF9; }
+        [data-theme="dark"] .cat-card { background: var(--card); border-color: var(--border); }
+        [data-theme="dark"] .cat-card-title { color: var(--txt); }
+        [data-theme="dark"] .cat-card-life-badge { background: #1a2a3e; color: #90CAF9; }
+        [data-theme="dark"] .cat-card-barcode { color: #555; }
+        [data-theme="dark"] .cat-card-stats { color: #999; }
+        [data-theme="dark"] .cat-card-stats .no-batch { color: #555; }
+        [data-theme="dark"] .cat-edit-link { color: #666; }
+        [data-theme="dark"] .item-txt-link { color: #666; }
+        [data-theme="dark"] .modal-card    { background: var(--modal-card-bg); }
+        [data-theme="dark"] .modal-card h3 { color: var(--txt); }
+        [data-theme="dark"] .modal-card p  { color: var(--sub); }
+        [data-theme="dark"] .form-modal-card { background: var(--modal-card-bg); }
+        [data-theme="dark"] .form-modal-header,
+        [data-theme="dark"] .form-modal-footer { border-color: var(--border); }
+        [data-theme="dark"] .form-modal-close { color: #666; }
+        [data-theme="dark"] .import-modal-card { background: var(--modal-card-bg); }
+        [data-theme="dark"] .import-modal-header { border-color: var(--border); }
+        [data-theme="dark"] .import-modal-footer { border-color: var(--border); }
+        [data-theme="dark"] .import-radio-item { border-color: var(--border); background: var(--card2); }
+        [data-theme="dark"] .import-radio-item.selected { border-color: var(--primary); background: var(--badge-ok-bg); }
+        [data-theme="dark"] .import-radio-name { color: var(--txt); }
+        [data-theme="dark"] .import-radio-desc { color: var(--sub); }
+        [data-theme="dark"] .import-preview-table th { background: #252525; color: var(--sub); }
+        [data-theme="dark"] .import-preview-table td { border-color: var(--border); color: var(--txt); }
+        [data-theme="dark"] .suggestions-list { background: var(--card); border-color: var(--primary); }
+        [data-theme="dark"] .suggestion-item { color: #ddd; border-color: var(--border); }
+        [data-theme="dark"] .suggestion-item:active { background: var(--card2); }
+        [data-theme="dark"] .warn-banner  { background: var(--warn-bg); border-color: #3a2800; }
+        [data-theme="dark"] .warn-banner.has-expired { background: var(--exp-bg); border-color: #3a1010; }
+        [data-theme="dark"] .btn-outline  { border-color: var(--border); color: var(--txt); background: var(--card2); }
+        [data-theme="dark"] .btn-blue     { background: #1565c0; }
+        [data-theme="dark"] .batch-panel  { background: #0d1f2d; }
+        [data-theme="dark"] .batch-panel label { color: #ccc; }
+        [data-theme="dark"] #chartContainer { background: var(--card); border-color: var(--border); }
+        [data-theme="dark"] .cat-add-row input { background: var(--input-bg); color: var(--txt); border-color: var(--input-border); }
+        [data-theme="dark"] .cat-item { background: var(--card2); color: var(--txt); }
+        [data-theme="dark"] .cat-item.builtin { color: #555; }
+        [data-theme="dark"] .backup-slot { background: var(--card2); }
+        [data-theme="dark"] .backup-slot-info { color: #aaa; }
+        [data-theme="dark"] .catalog-pick-item { background: var(--card); border-color: var(--border); }
+        [data-theme="dark"] .catalog-pick-item:active { background: var(--card2); }
+        [data-theme="dark"] .catalog-pick-name { color: var(--txt); }
+        [data-theme="dark"] .store-picker-card { background: var(--modal-card-bg); }
+        [data-theme="dark"] .store-picker-header { border-color: var(--border); color: var(--txt); }
+        [data-theme="dark"] .store-item { border-color: var(--border); color: var(--txt); }
+        [data-theme="dark"] .store-item:active { background: var(--card2); }
+        [data-theme="dark"] .store-item.active-store { border-color: var(--primary); background: var(--badge-ok-bg); }
+        [data-theme="dark"] .store-add-area { border-color: var(--border); }
+        [data-theme="dark"] .store-add-btn { background: var(--primary); }
+        [data-theme="dark"] .inv-chip { background: var(--chip-bg); color: var(--sub); }
+        [data-theme="dark"] .sort-chip-btn { border-color: var(--border); color: var(--txt); }
+        [data-theme="dark"] .sort-chip-btn:active { background: var(--card2); }
+        [data-theme="dark"] .inv-icon-btn { border-color: var(--border); color: var(--sub); }
+        [data-theme="dark"] .inv-icon-btn:active { background: var(--card2); }
+        [data-theme="dark"] .sort-sheet { background: var(--sheet-bg); }
+        [data-theme="dark"] .sort-sheet-title { color: #555; border-color: var(--border); }
+        [data-theme="dark"] .sort-sheet-item { color: var(--txt); border-color: var(--border); }
+        [data-theme="dark"] .sort-sheet-item:active { background: var(--card2); }
+        [data-theme="dark"] .sort-sheet-cancel { background: var(--card2); color: var(--sub); }
+        [data-theme="dark"] .sort-sheet-handle { background: #444; }
+        [data-theme="dark"] .batch-product-picker { background: var(--picker-bg); border-color: var(--input-border); }
+        [data-theme="dark"] .batch-product-picker .picker-hint { color: #666; }
+        [data-theme="dark"] .batch-product-picker .picker-name { color: var(--txt); }
+        [data-theme="dark"] .swipe-delete-bg { background: #c62828; }
+        [data-theme="dark"] .form-hint-snapshot { background: #0d1f2d; color: #90CAF9; }
+        [data-theme="dark"] .api-status-badge { background: var(--card2); color: var(--sub); }
+        [data-theme="dark"] .api-status-badge.ok   { background: var(--badge-ok-bg); color: var(--badge-ok-txt); }
+        [data-theme="dark"] .api-cors-tip { color: #555; }
+        [data-theme="dark"] .scanner-card { background: #111; }
+        [data-theme="dark"] .scanner-hd  { border-color: #333; color: #ccc; }
+        [data-theme="dark"] .scanner-hd button { color: #888; }
+        [data-theme="dark"] .sidebar-header { border-color: var(--border); }
+        [data-theme="dark"] .sidebar-header h3 { color: var(--txt); }
+        [data-theme="dark"] .settings-entry-title { color: var(--txt); }
+        [data-theme="dark"] .settings-entry-arrow { color: #555; }
+        [data-theme="dark"] #loadMoreBtn { background: var(--badge-ok-bg); color: var(--primary); }
+
+        /* 主题切换按钮 */
+        .theme-segmented {
+            display: flex; background: var(--chip-bg); border-radius: 10px;
+            padding: 3px; gap: 2px; margin-top: 8px;
+        }
+        .theme-seg-btn {
+            flex: 1; padding: 7px 4px; border: none; background: none;
+            border-radius: 7px; font-size: 12px; color: var(--sub);
+            cursor: pointer; transition: background .15s, color .15s; font-weight: 500;
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+        }
+        .theme-seg-btn.active {
+            background: var(--card); color: var(--primary);
+            box-shadow: 0 1px 4px rgba(0,0,0,.12);
+            font-weight: 700;
+        }
+        [data-theme="dark"] .theme-seg-btn.active {
+            background: var(--card2); box-shadow: 0 1px 4px rgba(0,0,0,.4);
+        }
+        .theme-seg-icon { font-size: 16px; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--txt); overflow-x: hidden; padding-bottom: 80px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--txt); overflow-x: hidden; padding-bottom: 80px; transition: background .25s, color .25s; }
 
         /* ── 顶栏 ── */
-        .header { background: var(--card); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,.06); position: sticky; top: 0; z-index: 100; gap: 10px; }
+        .header { background: var(--card); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px var(--shadow); position: sticky; top: 0; z-index: 100; gap: 10px; }
         .menu-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; flex-shrink: 0; }
-        .store-switcher-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; background: #f0f7f0; border: 1px solid #c8e6c9; border-radius: 20px; padding: 6px 14px; cursor: pointer; max-width: 210px; overflow: hidden; }
+        .gear-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px 6px; flex-shrink: 0; color: var(--sub); line-height: 1; border-radius: 8px; transition: background .12s; }
+        .gear-btn:active { background: var(--card2); }
+        .store-switcher-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; background: var(--store-btn-bg); border: 1px solid var(--store-btn-border); border-radius: 20px; padding: 6px 20px; cursor: pointer; max-width: 280px; overflow: hidden; }
         .store-name-row { display: flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 600; color: var(--primary-dk); white-space: nowrap; overflow: hidden; }
         .store-name-text { overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
         .store-arrow { font-size: 10px; color: #888; }
@@ -38,11 +225,25 @@
         .warn-banner-sub { font-size: 12px; color: #888; margin-top: 2px; }
         .warn-banner-arrow { font-size: 12px; color: #bbb; }
 
-        /* ── 侧边栏 ── */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: var(--card); z-index: 1001; transition: left .3s; box-shadow: 2px 0 10px rgba(0,0,0,.1); padding: 20px; overflow-y: auto; }
-        .sidebar.active { left: 0; }
+        /* ── 侧边栏（设置入口列表）── */
+        .sidebar { position: fixed; top: 0; right: -300px; left: auto; width: 280px; height: 100%; background: var(--sidebar-bg); z-index: 1001; transition: right .3s; box-shadow: -2px 0 10px rgba(0,0,0,.1); overflow-y: auto; display: flex; flex-direction: column; }
+        .sidebar.active { right: 0; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; display: none; }
-        .sidebar > h3 { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .sidebar-header { padding: 20px 18px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-header h3 { font-size: 16px; font-weight: 700; color: var(--txt); }
+        .sidebar-close-btn { background: none; border: none; font-size: 20px; color: #aaa; cursor: pointer; padding: 4px; line-height: 1; }
+        .sidebar-close-btn:active { color: var(--txt); }
+        .settings-section { padding: 8px 0; }
+        .settings-section-label { font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .06em; padding: 10px 18px 4px; }
+        .settings-entry { display: flex; align-items: center; gap: 12px; padding: 13px 18px; cursor: pointer; transition: background .12s; border: none; background: none; width: 100%; text-align: left; }
+        .settings-entry:active { background: var(--card2); }
+        .settings-entry-icon { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+        .settings-entry-body { flex: 1; overflow: hidden; }
+        .settings-entry-title { font-size: 15px; font-weight: 600; color: var(--txt); line-height: 1.2; }
+        .settings-entry-desc { font-size: 12px; color: var(--sub); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .settings-entry-arrow { font-size: 16px; color: #bbb; flex-shrink: 0; }
+        .settings-entry-action { font-size: 13px; color: var(--primary); font-weight: 600; flex-shrink: 0; white-space: nowrap; }
+        .settings-divider { height: 1px; background: var(--border); margin: 0; }
         .menu-item { margin-bottom: 22px; }
         .menu-item label.section-title { font-weight: bold; color: var(--primary); display: block; margin-bottom: 10px; font-size: 15px; }
         .menu-item label { font-size: 13px; color: var(--sub); display: block; margin-bottom: 5px; }
@@ -56,7 +257,7 @@
         .cat-add-row { display: flex; gap: 6px; margin-bottom: 10px; }
         .cat-add-row input { flex: 1; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; background: #fafafa; }
         .cat-add-row button { padding: 8px 10px; background: var(--primary); color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
-        .cat-list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
+        .cat-list { display: flex; flex-direction: column; gap: 6px; }
         .cat-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: #f5f5f5; border-radius: 6px; font-size: 14px; }
         .cat-item.builtin { color: #888; }
         .cat-delete-btn { background: none; border: none; color: #d32f2f; font-size: 16px; cursor: pointer; padding: 0 4px; }
@@ -75,7 +276,7 @@
         .search-container { position: relative; margin-bottom: 14px; }
         .search-container input { padding-left: 35px; border-radius: 20px; border-color: var(--primary); }
         .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 16px; }
-        input, select { width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background: #fafafa; }
+        input, select { width: 100%; padding: 11px; border: 1px solid var(--input-border); border-radius: 8px; font-size: 16px; outline: none; background: var(--input-bg); color: var(--txt); }
         input:focus, select:focus { border-color: var(--primary); background: #fff; }
         input[type="checkbox"] { width: auto; padding: 0; margin: 0; }
         .form-group { margin-bottom: 14px; }
@@ -113,7 +314,7 @@
         .fab-add:active { transform: scale(.92); box-shadow: 0 2px 6px rgba(76,175,80,.3); }
 
         /* ── 商品卡片 ── */
-        .item { padding: 12px 14px 12px 18px; border-radius: 10px; margin-bottom: 10px; position: relative; border: 1px solid var(--border); background: #fff; display: flex; flex-direction: column; overflow: hidden; transition: filter 0.2s, opacity 0.2s; }
+        .item { padding: 12px 14px 12px 18px; border-radius: 10px; margin-bottom: 10px; position: relative; border: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; overflow: hidden; transition: filter 0.2s, opacity 0.2s; }
         .item::before { content: ''; position: absolute; left: 0; top: 0; width: 5px; height: 100%; background: #ccc; transition: background .3s; }
         .item.ok::before, .item.warn::before { background: linear-gradient(to bottom, #4CAF50 calc(100% - var(--progress) - 20%), #FFB300 calc(100% - var(--progress) + 20%)); }
         .item.expired::before { background: #F44336; }
@@ -151,10 +352,10 @@
         .status-badge { padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; flex-shrink: 0; }
 
 
-        #chartContainer { width: 100%; height: 300px; background: #fff; border-radius: 12px; margin-bottom: 14px; border: 1px solid var(--border); display: none; padding: 10px 0; }
+        #chartContainer { width: 100%; height: 300px; background: var(--card); border-radius: 12px; margin-bottom: 14px; border: 1px solid var(--border); display: none; padding: 10px 0; }
 
         /* ── 商品库卡片 ── */
-        .cat-card { padding: 14px; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); background: #fff; }
+        .cat-card { padding: 14px; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); background: var(--card); }
         .cat-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; gap: 10px; }
         .cat-card-title { font-weight: bold; font-size: 16px; color: #222; flex: 1; word-break: break-all; }
         .cat-card-life-badge { background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
@@ -165,7 +366,7 @@
         .cat-card-btns { display: flex; gap: 8px; }
 
         /* ── modal 表单 ── */
-        .form-modal-card { background: #fff; width: 92%; max-width: 420px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25); transform: scale(.95); transition: .2s; display: flex; flex-direction: column; max-height: 90vh; }
+        .form-modal-card { background: var(--modal-card-bg); width: 92%; max-width: 420px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25); transform: scale(.95); transition: .2s; display: flex; flex-direction: column; max-height: 90vh; }
         .modal-overlay-ui.active .form-modal-card { transform: scale(1); }
         .form-modal-header { padding: 14px 18px 12px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .form-modal-header h3 { font-size: 16px; }
@@ -190,7 +391,7 @@
         .catalog-pick-meta { font-size: 11px; color: #888; margin-top: 2px; }
         .catalog-pick-empty { text-align: center; color: #aaa; padding: 30px 0; font-size: 13px; }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,.05); z-index: 900; border-top: 1px solid #eaeaea; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; box-shadow: 0 -2px 10px var(--shadow); z-index: 900; border-top: 1px solid var(--border); }
         .nav-item { flex: 1; text-align: center; padding: 11px 0; font-size: 12px; color: #888; cursor: pointer; transition: .2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-item .icon { font-size: 20px; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
@@ -198,13 +399,13 @@
         #fileInput, #jsonImportInput { display: none; }
 
         /* ── 通用弹窗 ── */
-        .modal-overlay-ui { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 2000; display: none; justify-content: center; align-items: center; }
+        .modal-overlay-ui { position: fixed; inset: 0; background: var(--overlay); z-index: 2000; display: none; justify-content: center; align-items: center; }
         .modal-overlay-ui.active { display: flex; animation: mfade .2s; }
         @keyframes mfade { from { opacity: 0; } to { opacity: 1; } }
-        .modal-card { background: #fff; width: 85%; max-width: 320px; border-radius: 16px; padding: 22px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,.2); transform: scale(.95); transition: .2s; }
+        .modal-card { background: var(--modal-card-bg); width: 85%; max-width: 320px; border-radius: 16px; padding: 22px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,.2); transform: scale(.95); transition: .2s; }
         .modal-overlay-ui.active .modal-card { transform: scale(1); }
-        .modal-card h3 { margin-bottom: 10px; font-size: 18px; }
-        .modal-card p  { margin-bottom: 20px; color: #666; font-size: 14px; line-height: 1.5; }
+        .modal-card h3 { margin-bottom: 10px; font-size: 18px; color: var(--txt); }
+        .modal-card p  { margin-bottom: 20px; color: var(--sub); font-size: 14px; line-height: 1.5; }
         .modal-btns { display: flex; gap: 12px; }
 
         .import-modal-card { background: #fff; width: 92%; max-width: 400px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25); transform: scale(.95); transition: .2s; display: flex; flex-direction: column; max-height: 88vh; }
@@ -430,94 +631,239 @@
             font-size: 15px; color: #555; font-weight: 600; cursor: pointer;
         }
         .sort-sheet-cancel:active { background: #e8e8e8; }
+
+        /* ══ SPA 屏幕导航系统 ══ */
+        .screen {
+            position: fixed; inset: 0;
+            background: var(--bg);
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform .32s cubic-bezier(.25,.46,.45,.94);
+            z-index: 200;
+            will-change: transform;
+            overflow: hidden;
+        }
+        .screen.screen-active  { transform: translateX(0); }
+        .screen.screen-behind  { transform: translateX(-28%); }
+        #screen-main {
+            transform: translateX(0);
+            z-index: 100;
+            transition: transform .32s cubic-bezier(.25,.46,.45,.94);
+        }
+
+        /* 二级页顶栏 */
+        .screen-nav {
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center;
+            height: 48px; padding: 0 4px;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px var(--shadow);
+        }
+        .screen-back-btn {
+            height: 44px; min-width: 52px; padding: 0 8px;
+            background: none; border: none;
+            color: var(--primary); cursor: pointer;
+            display: flex; align-items: center; gap: 2px;
+            font-size: 17px; font-weight: 500;
+        }
+        .screen-back-btn:active { opacity: .5; }
+        .screen-back-chevron { font-size: 26px; line-height: 1; margin-top: -1px; }
+        .screen-title { flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: var(--txt); }
+        .screen-nav-right {
+            min-width: 52px; height: 44px; padding: 0 10px;
+            background: none; border: none;
+            color: var(--primary); font-size: 15px; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; justify-content: flex-end;
+        }
+        .screen-nav-right:active { opacity: .5; }
+
+        /* 滚动区 */
+        .screen-body {
+            flex: 1; overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+        }
+
+        /* 设置列表行 */
+        .sg-label {
+            font-size: 12px; font-weight: 600; color: var(--sub);
+            padding: 22px 18px 6px; letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+        .sr {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 18px;
+            background: var(--card);
+            border: none; border-bottom: 1px solid var(--border);
+            width: 100%; text-align: left; cursor: pointer;
+            transition: background .12s;
+        }
+        .sr:first-of-type { border-top: 1px solid var(--border); }
+        .sr:active { background: var(--card2); }
+        .sr-icon { font-size: 22px; flex-shrink: 0; width: 32px; text-align: center; }
+        .sr-body { flex: 1; overflow: hidden; }
+        .sr-title { font-size: 16px; color: var(--txt); font-weight: 500; }
+        .sr-desc  { font-size: 12px; color: var(--sub); margin-top: 2px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sr-value { font-size: 14px; color: var(--sub); flex-shrink: 0; margin-right: 2px; }
+        .sr-chevron { font-size: 20px; color: #ccc; flex-shrink: 0; }
+        [data-theme="dark"] .sr-chevron { color: #444; }
+        [data-theme="dark"] .sr { background: var(--card); border-color: var(--border); }
+        [data-theme="dark"] .sr:active { background: var(--card2); }
+
+        /* 功能页内容容器 */
+        .sp { padding: 0 0 8px; }  /* screen-page wrapper */
+        .sp-section { background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 0; padding: 14px 18px; }
+        .sp-section + .sp-section { margin-top: 24px; }
+        .sp-section-note { font-size: 12px; color: var(--sub); line-height: 1.65; padding: 12px 18px 0; }
+        .sp-action-bar { padding: 20px 18px; }
+
+        /* ══ 设置 SPA 子页面系统 ══ */
+        /* 设置根页标题 */
+        .settings-root-header {
+            background: var(--nav-bg); padding: 20px 18px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .settings-root-title { font-size: 28px; font-weight: 700; color: var(--txt); letter-spacing: -.4px; }
+
+        /* 设置根页列表行 */
+        .settings-nav-row {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 16px; width: 100%; text-align: left;
+            background: none; border: none; border-bottom: 1px solid var(--border);
+            cursor: pointer; transition: background .12s;
+        }
+        .settings-nav-row:last-child { border-bottom: none; }
+        .settings-nav-row:active { background: var(--card2); }
+        .settings-nav-icon { font-size: 24px; flex-shrink: 0; width: 32px; text-align: center; }
+        .settings-nav-body { flex: 1; }
+        .settings-nav-title { font-size: 16px; color: var(--txt); font-weight: 500; }
+        .settings-nav-desc  { font-size: 12px; color: var(--sub); margin-top: 2px; }
+        .settings-nav-arrow { font-size: 20px; color: #ccc; flex-shrink: 0; }
+        [data-theme="dark"] .settings-nav-arrow { color: #444; }
+
+        /* 分组区 */
+        .nav-section { padding: 0; }
+        .nav-section-label {
+            font-size: 12px; color: var(--sub); font-weight: 600;
+            padding: 20px 18px 6px; text-transform: uppercase; letter-spacing: .04em;
+        }
+        .nav-card {
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .nav-card-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 13px 16px; min-height: 50px;
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-card-row:last-child { border-bottom: none; }
+        .nav-card-label { font-size: 15px; color: var(--txt); flex-shrink: 0; min-width: 90px; }
+        .nav-card-input {
+            flex: 1; text-align: right; border: none; background: none;
+            font-size: 15px; color: var(--sub); outline: none; min-width: 0;
+        }
+        .nav-card-select {
+            border: none; background: none; font-size: 15px;
+            color: var(--sub); outline: none;
+            -webkit-appearance: none; appearance: none;
+            padding-right: 18px;
+        }
+        .nav-card-select-wrap {
+            position: relative; display: flex; align-items: center; flex-shrink: 0;
+        }
+        .nav-card-select-wrap::after {
+            content: '▾'; position: absolute; right: 0; top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px; color: var(--sub); pointer-events: none;
+        }
+        [data-theme="dark"] .nav-card { background: var(--card); border-color: var(--border); }
+        [data-theme="dark"] .nav-card-row { border-color: var(--border); }
+        [data-theme="dark"] .nav-card-input,
+        [data-theme="dark"] .nav-card-select { color: var(--sub); background: transparent; }
+
+        /* 子页面层（iOS 式滑入） */
+        .nav-page {
+            position: fixed; inset: 0;
+            background: var(--bg);
+            z-index: 500;
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform .32s cubic-bezier(.25,.46,.45,.94);
+            will-change: transform; overflow: hidden;
+        }
+        .nav-page.nav-active { transform: translateX(0); }
+        .nav-page.nav-behind { transform: translateX(-28%); }
+        [data-theme="dark"] .nav-page { background: var(--bg); }
+
+        /* 子页顶栏 */
+        .nav-page-header {
+            background: var(--nav-bg); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center;
+            height: 48px; padding: 0 4px; flex-shrink: 0;
+            box-shadow: 0 1px 3px var(--shadow);
+        }
+        [data-theme="dark"] .nav-page-header { background: var(--nav-bg); border-color: var(--border); }
+        .nav-back-btn {
+            display: flex; align-items: center;
+            height: 44px; padding: 0 10px;
+            background: none; border: none; color: var(--primary);
+            font-size: 16px; font-weight: 500; cursor: pointer; gap: 1px;
+        }
+        .nav-back-btn:active { opacity: .5; }
+        .nav-back-arrow { font-size: 26px; line-height: 1; margin-top: -1px; }
+        .nav-page-title {
+            flex: 1; text-align: center; font-size: 17px;
+            font-weight: 600; color: var(--txt);
+        }
+        [data-theme="dark"] .nav-page-title { color: var(--txt); }
+        .nav-page-body {
+            flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+        }
+
+        /* 外观主题选择行 */
+        .theme-choice-row {
+            display: flex; align-items: center; gap: 0;
+            padding: 14px 16px; cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background .12s;
+        }
+        .theme-choice-row:last-child { border-bottom: none; }
+        .theme-choice-row:active { background: var(--card2); }
+        [data-theme="dark"] .theme-choice-row { border-color: var(--border); }
+        .theme-choice-label { flex: 1; font-size: 16px; color: var(--txt); font-weight: 500; }
+        .theme-choice-check { font-size: 18px; color: var(--primary); display: none; }
+        .theme-choice-row.selected .theme-choice-check { display: block; }
+
+        /* 数据管理页 */
+        .data-section-title {
+            font-size: 12px; font-weight: 600; color: var(--sub);
+            padding: 20px 18px 6px; text-transform: uppercase; letter-spacing: .04em;
+        }
+        .data-desc { font-size: 13px; color: var(--sub); padding: 0 18px 12px; line-height: 1.6; }
+        .data-btn-row { display: flex; gap: 10px; padding: 0 16px 16px; }
+        .data-btn-row .btn { flex: 1; font-size: 14px; }
+        .danger-zone { padding: 16px 16px 8px; }
+        .danger-zone .btn { width: 100%; padding: 14px; font-size: 15px; border-radius: 12px; }
+
+        /* 备份存储页 */
+        .storage-info-box {
+            background: var(--card); border-radius: 12px;
+            margin: 0 16px; padding: 14px 16px;
+            border: 1px solid var(--border);
+        }
+        [data-theme="dark"] .storage-info-box { background: var(--card); border-color: var(--border); }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
-<div class="sidebar" id="sidebar">
-    <h3>工具菜单</h3>
 
-    <div class="menu-item">
-        <label class="section-title">⚙️ 系统设置</label>
-        <div class="form-group"><label>临期预警天数 (天)</label><input type="number" id="warnDays" placeholder="例如: 7"></div>
-        <div class="form-group"><label>默认生产日期</label><input type="date" id="defProdDate"></div>
-        <div class="form-group"><label>默认保质期时长</label><input type="number" id="defLife" placeholder="例如: 180"></div>
-        <div class="form-group">
-            <label>默认单位</label>
-            <select id="defUnit">
-                <option value="days">天</option><option value="months">个月</option><option value="years">年</option>
-            </select>
-        </div>
-        <button class="btn btn-primary" onclick="saveSettings()">保存并应用设置</button>
-    </div>
 
-    <div class="menu-item" style="border-top:1px solid #eee;padding-top:18px;">
-        <label class="section-title">🔍 条码查询 API</label>
-        <label style="font-size:12px;color:#aaa;line-height:1.5;margin-bottom:8px;display:block;">扫码后自动查询商品名称。各平台均可免费注册获取 Key，推荐聚合数据（每日 50 次免费）。</label>
-        <div class="api-platform-row">
-            <select id="apiPlatform" onchange="onApiPlatformChange()">
-                <option value="none">⛔ 暂不使用</option>
-                <option value="juhe">聚合数据</option>
-                <option value="shujubao">数据宝</option>
-                <option value="alicloud">阿里云市场</option>
-                <option value="custom">自定义</option>
-            </select>
-            <span class="api-status-badge" id="apiStatusBadge">未配置</span>
-        </div>
-        <div class="api-key-row" id="apiKeyRow">
-            <div class="api-field-wrap" id="apiKeyFieldWrap">
-                <label class="api-field-label" id="apiKeyLabel">AppKey / Token</label>
-                <input type="password" id="apiAppKey" placeholder="填写 AppKey / AppCode" autocomplete="off">
-                <button type="button" class="api-eye-btn" onclick="toggleApiFieldVis('apiAppKey',this)" title="显示/隐藏">👁</button>
-            </div>
-            <div class="api-field-wrap" id="apiSecretFieldWrap" style="display:none;">
-                <label class="api-field-label" id="apiSecretLabel">AppSecret / 密钥</label>
-                <input type="password" id="apiAppSecret" placeholder="填写 AppSecret" autocomplete="off">
-                <button type="button" class="api-eye-btn" onclick="toggleApiFieldVis('apiAppSecret',this)" title="显示/隐藏">👁</button>
-            </div>
-            <div class="api-field-wrap" id="apiUrlFieldWrap" style="display:none;">
-                <label class="api-field-label" id="apiUrlLabel">接口 URL</label>
-                <input type="text" id="apiCustomUrl" autocomplete="off" placeholder="https://...（含 {code} 或 {key} 占位符）">
-            </div>
-        </div>
-        <div class="api-cors-tip" id="apiCorsTip"></div>
-        <button class="btn btn-primary" style="margin-top:4px;" onclick="saveApiSettings()">保存 API 设置</button>
-    </div>
-
-    <div class="menu-item" style="border-top:1px solid #eee;padding-top:18px;">
-        <label class="section-title">🏷️ 分类管理</label>
-        <div class="cat-add-row">
-            <input type="text" id="newCatInput" placeholder="如: 🍺 酒类" maxlength="20">
-            <button onclick="addCustomCategory()">+ 添加</button>
-        </div>
-        <div class="cat-list" id="catList"></div>
-    </div>
-
-    <div class="menu-item" style="border-top:1px solid #eee;padding-top:18px;">
-        <label class="section-title">📦 商品库数据（门店间同步）</label>
-        <label style="font-size:12px;color:#aaa;margin-bottom:8px;line-height:1.5;">导出/导入 JSON 格式商品档案。用于多门店间快速同步商品名称、分类、保质期配置（不含物理库存和日期）</label>
-        <button class="btn btn-blue" style="margin-bottom:8px" onclick="exportCatalogJson()">📤 导出商品库数据</button>
-        <button class="btn btn-outline" style="margin-bottom:8px" onclick="triggerJsonImport()">📥 导入商品库数据</button>
-    </div>
-
-    <div class="menu-item" style="border-top:1px solid #eee;padding-top:18px;">
-        <label class="section-title">📊 产品台账（Excel 查看）</label>
-        <label style="font-size:12px;color:#aaa;margin-bottom:8px;line-height:1.5;">Excel 格式，含全部产品信息，可用手机/电脑 Excel 打开查看，也可导回工具使用</label>
-        <button class="btn btn-outline" style="margin-bottom:8px" onclick="exportToExcel()">📥 导出门店产品信息</button>
-        <button class="btn btn-outline" style="margin-bottom:8px" onclick="triggerImport()">📂 导入门店产品信息</button>
-        <button class="btn btn-danger" onclick="clearAllData()">⚠️ 清空本店记录</button>
-    </div>
-
-    <div class="menu-item" style="border-top:1px solid #eee;padding-top:18px;">
-        <label class="section-title">🔁 自动备份（最近3次）</label>
-        <div class="backup-slots" id="backupSlots"></div>
-    </div>
-
-    <input type="file" id="fileInput"       accept=".xlsx,.xls,.csv"  onchange="handleImport(event)">
-    <input type="file" id="jsonImportInput" accept=".json"             onchange="handleJsonImport(event)">
-</div>
 
 <div class="modal-overlay-ui" id="customConfirmModal">
     <div class="modal-card">
@@ -617,18 +963,20 @@
     </div>
 </div>
 
+<!-- file inputs at body level (Android WebView compatibility) -->
+<input type="file" id="fileInput"       accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImport(event)">
+<input type="file" id="jsonImportInput" accept=".json"           style="display:none" onchange="handleJsonImport(event)">
+
 <div id="toast" class="toast"></div>
 
-<div class="header">
-    <button class="menu-btn" onclick="toggleMenu()">☰</button>
-    <button class="store-switcher-btn" onclick="openStorePicker()">
+<div class="header" id="mainHeader">
+    <button class="store-switcher-btn" onclick="openStorePicker()" style="max-width:100%;">
         <div class="store-name-row">
             🏪 <span class="store-name-text" id="currentStoreName">加载中…</span>
             <span class="store-arrow">▾</span>
         </div>
         <div class="store-version-hint" id="storeVersionHint"></div>
     </button>
-    <span class="page-label" id="headerTitle">商品库</span>
 </div>
 
 <div class="warn-banner" id="warnBanner" onclick="handleBannerClick()">
@@ -716,9 +1064,9 @@
     </select>
 
     <div class="batch-panel" id="batchPanel">
-        <div>
-            <input type="checkbox" id="selectAllCB" onchange="toggleSelectAll()" style="width:16px;height:16px;margin-right:4px;">
-            <label for="selectAllCB" style="font-size:14px;">全选</label>
+        <div style="flex:1;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;padding:6px 0;min-height:36px;" onclick="document.getElementById('selectAllCB').checked=!document.getElementById('selectAllCB').checked;toggleSelectAll();">
+            <input type="checkbox" id="selectAllCB" style="width:18px;height:18px;pointer-events:none;" onchange="toggleSelectAll()">
+            <span style="font-size:14px;font-weight:600;">全选</span>
         </div>
         <div style="display:flex;gap:8px;">
             <button class="btn-sm btn-outline" id="batchWithdrawBtn" onclick="batchWithdraw()">批量下架</button>
@@ -736,13 +1084,295 @@
 <div class="bottom-nav">
     <div class="nav-item active" id="nav-catalog" onclick="switchTab('catalog')"><span class="icon">📚</span><span>商品库</span></div>
     <div class="nav-item" id="nav-list" onclick="switchTab('list')"><span class="icon">📦</span><span>商店库存</span></div>
+    <div class="nav-item" id="nav-settings" onclick="switchTab('settings')"><span class="icon">⚙️</span><span>设置</span></div>
+</div>
+
+<!-- ══ 设置根页面 ══ -->
+<div id="view-settings" class="view-section" style="padding:0; min-height:calc(100vh - 56px); overflow-y:auto;">
+    <div class="settings-root-header">
+        <div class="settings-root-title">设置</div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-label">偏好</div>
+        <div class="nav-card">
+            <button class="settings-nav-row" onclick="navPush('page-settings-system')">
+                <span class="settings-nav-icon">🔔</span>
+                <div class="settings-nav-body">
+                    <div class="settings-nav-title">系统设置</div>
+                    <div class="settings-nav-desc">临期预警天数、默认保质期</div>
+                </div>
+                <span class="settings-nav-arrow">›</span>
+            </button>
+            <button class="settings-nav-row" onclick="navPush('page-settings-theme')">
+                <span class="settings-nav-icon">🌙</span>
+                <div class="settings-nav-body">
+                    <div class="settings-nav-title">外观主题</div>
+                    <div class="settings-nav-desc" id="themeEntryDesc">跟随系统</div>
+                </div>
+                <span class="settings-nav-arrow">›</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-label">数据与内容</div>
+        <div class="nav-card">
+            <button class="settings-nav-row" onclick="navPush('page-settings-category')">
+                <span class="settings-nav-icon">🏷️</span>
+                <div class="settings-nav-body">
+                    <div class="settings-nav-title">分类管理</div>
+                    <div class="settings-nav-desc">添加或删除自定义商品分类</div>
+                </div>
+                <span class="settings-nav-arrow">›</span>
+            </button>
+            <button class="settings-nav-row" onclick="navPush('page-settings-data')">
+                <span class="settings-nav-icon">📂</span>
+                <div class="settings-nav-body">
+                    <div class="settings-nav-title">数据管理</div>
+                    <div class="settings-nav-desc">导出 Excel / JSON，导入备份</div>
+                </div>
+                <span class="settings-nav-arrow">›</span>
+            </button>
+            <button class="settings-nav-row" onclick="navPush('page-settings-backup')">
+                <span class="settings-nav-icon">💾</span>
+                <div class="settings-nav-body">
+                    <div class="settings-nav-title">备份与存储</div>
+                    <div class="settings-nav-desc">查看自动备份和数据概况</div>
+                </div>
+                <span class="settings-nav-arrow">›</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-label">高级</div>
+        <div class="nav-card">
+            <button class="settings-nav-row" onclick="navPush('page-settings-api')">
+                <span class="settings-nav-icon">🔍</span>
+                <div class="settings-nav-body">
+                    <div class="settings-nav-title">条码查询 API</div>
+                    <div class="settings-nav-desc" id="apiEntryDesc">未配置</div>
+                </div>
+                <span class="settings-nav-arrow">›</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ 子页面：系统设置 ══ -->
+<div class="nav-page" id="page-settings-system" style="display:none;">
+    <div class="nav-page-header">
+        <button class="nav-back-btn" onclick="navPop()"><span class="nav-back-arrow">‹</span> 设置</button>
+        <span class="nav-page-title">系统设置</span>
+    </div>
+    <div class="nav-page-body">
+        <div class="nav-section">
+            <div class="nav-section-label">预警与默认值</div>
+            <div class="nav-card">
+                <div class="nav-card-row">
+                    <span class="nav-card-label">临期预警天数</span>
+                    <input class="nav-card-input" type="number" id="warnDays" placeholder="7">
+                    <span style="font-size:14px;color:var(--sub);margin-left:4px;">天</span>
+                </div>
+                <div class="nav-card-row">
+                    <span class="nav-card-label">默认生产日期</span>
+                    <input class="nav-card-input" type="date" id="defProdDate">
+                </div>
+                <div class="nav-card-row">
+                    <span class="nav-card-label">默认保质期</span>
+                    <input class="nav-card-input" type="number" id="defLife" placeholder="180" style="flex:1;min-width:60px;max-width:none;">
+                    <div class="nav-card-select-wrap" style="margin-left:6px;">
+                        <select class="nav-card-select" id="defUnit">
+                            <option value="days">天</option>
+                            <option value="months">个月</option>
+                            <option value="years">年</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="padding:0 16px;">
+            <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;border-radius:12px;" onclick="saveSettings()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ 子页面：外观主题 ══ -->
+<div class="nav-page" id="page-settings-theme" style="display:none;">
+    <div class="nav-page-header">
+        <button class="nav-back-btn" onclick="navPop()"><span class="nav-back-arrow">‹</span> 设置</button>
+        <span class="nav-page-title">外观主题</span>
+    </div>
+    <div class="nav-page-body">
+        <div class="nav-section" style="padding-bottom:0;">
+            <div class="nav-section-label">选择模式</div>
+        </div>
+        <div class="nav-card" style="margin:8px 16px 0;">
+            <div class="theme-choice-row" id="theme-row-light" onclick="setTheme('light')">
+                <span style="font-size:20px;margin-right:12px;">☀️</span>
+                <span class="theme-choice-label">浅色</span>
+                <span class="theme-choice-check">✓</span>
+            </div>
+            <div class="theme-choice-row" id="theme-row-system" onclick="setTheme('system')">
+                <span style="font-size:20px;margin-right:12px;">📱</span>
+                <span class="theme-choice-label">跟随系统</span>
+                <span class="theme-choice-check">✓</span>
+            </div>
+            <div class="theme-choice-row" id="theme-row-dark" onclick="setTheme('dark')">
+                <span style="font-size:20px;margin-right:12px;">🌙</span>
+                <span class="theme-choice-label">深色</span>
+                <span class="theme-choice-check">✓</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ 子页面：分类管理 ══ -->
+<div class="nav-page" id="page-settings-category" style="display:none;">
+    <div class="nav-page-header">
+        <button class="nav-back-btn" onclick="navPop()"><span class="nav-back-arrow">‹</span> 设置</button>
+        <span class="nav-page-title">分类管理</span>
+    </div>
+    <div class="nav-page-body">
+        <div class="nav-section">
+            <div class="nav-section-label">添加分类</div>
+            <div class="nav-card">
+                <div class="nav-card-row" style="gap:8px;">
+                    <input type="text" id="newCatInput" placeholder="如: 🍺 酒类" maxlength="20"
+                        style="flex:1;border:none;background:none;font-size:15px;outline:none;color:var(--txt);">
+                    <button onclick="addCustomCategory()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:14px;font-weight:600;cursor:pointer;">+ 添加</button>
+                </div>
+            </div>
+        </div>
+        <div class="nav-section" style="padding-top:0;">
+            <div class="nav-section-label">已有分类</div>
+            <div class="nav-card">
+                <div class="cat-list" id="catList" style="padding:4px 0;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ 子页面：数据管理 ══ -->
+<div class="nav-page" id="page-settings-data" style="display:none;">
+    <div class="nav-page-header">
+        <button class="nav-back-btn" onclick="navPop()"><span class="nav-back-arrow">‹</span> 设置</button>
+        <span class="nav-page-title">数据管理</span>
+    </div>
+    <div class="nav-page-body">
+        <div class="data-section-title">🏪 商品库同步</div>
+        <div class="data-desc">同步商品名称、分类、保质期配置，不含库存批次。适合多门店之间共享商品库。</div>
+        <div class="data-btn-row">
+            <button class="btn btn-blue" onclick="exportCatalogJson()">📤 导出商品库</button>
+            <button class="btn btn-outline" onclick="triggerJsonImport()">📥 导入商品库</button>
+        </div>
+        <div style="height:1px;background:var(--border);margin:4px 16px 16px;"></div>
+        <div class="data-section-title">📊 库存台账（Excel）</div>
+        <div class="data-desc">含全部批次记录，可在电脑 Excel 中查看，也可导回本工具。</div>
+        <div class="data-btn-row">
+            <button class="btn btn-outline" onclick="exportToExcel()">📤 导出台账</button>
+            <button class="btn btn-outline" onclick="triggerImport()">📥 导入台账</button>
+        </div>
+        <div class="danger-zone">
+            <div class="nav-section-label" style="margin-bottom:8px;">危险区域</div>
+            <button class="btn btn-danger" onclick="clearAllData()">⚠️ 清空本店所有记录</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ 子页面：备份与存储 ══ -->
+<div class="nav-page" id="page-settings-backup" style="display:none;">
+    <div class="nav-page-header">
+        <button class="nav-back-btn" onclick="navPop()"><span class="nav-back-arrow">‹</span> 设置</button>
+        <span class="nav-page-title">备份与存储</span>
+    </div>
+    <div class="nav-page-body">
+        <div class="nav-section">
+            <div class="nav-section-label">自动备份（最近 3 次）</div>
+            <div class="backup-slots" id="backupSlots"></div>
+        </div>
+        <div class="nav-section" style="padding-top:0;">
+            <div class="nav-section-label">数据概况</div>
+            <div class="storage-info-box">
+                <div id="storageInfoContent" style="font-size:14px;color:var(--txt);line-height:2.2;"></div>
+                <button onclick="renderStorageInfo()" style="margin-top:6px;font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer;padding:0;">🔄 刷新</button>
+            </div>
+        </div>
+        <div class="nav-section" style="padding-top:0;">
+            <div class="nav-section-label">存储位置说明</div>
+            <div class="nav-card">
+                <div class="nav-card-row" style="flex-direction:column;align-items:flex-start;gap:6px;padding:14px 16px;">
+                    <div style="font-size:14px;font-weight:600;color:var(--txt);">📱 本地数据</div>
+                    <div style="font-size:13px;color:var(--sub);line-height:1.6;">商品库和库存批次保存在浏览器的 <b>localStorage</b> 中，仅限本设备本浏览器访问。清除浏览器数据会导致丢失，建议定期导出备份。</div>
+                </div>
+                <div class="nav-card-row" style="flex-direction:column;align-items:flex-start;gap:6px;padding:14px 16px;">
+                    <div style="font-size:14px;font-weight:600;color:var(--txt);">📂 导出文件位置</div>
+                    <div style="font-size:13px;color:var(--sub);line-height:1.6;">导出的 Excel / JSON 文件由浏览器自动保存到手机<b>下载文件夹</b>（通常为 <code style="font-size:12px;background:var(--card2);padding:1px 5px;border-radius:4px;">下载 / Download</code>）。受浏览器限制，无法在导出前手动选择路径，导出后可在文件管理器中移动。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ 子页面：条码查询 API ══ -->
+<div class="nav-page" id="page-settings-api" style="display:none;">
+    <div class="nav-page-header">
+        <button class="nav-back-btn" onclick="navPop()"><span class="nav-back-arrow">‹</span> 设置</button>
+        <span class="nav-page-title">条码查询 API</span>
+    </div>
+    <div class="nav-page-body">
+        <div class="nav-section">
+            <div class="nav-section-label">接口配置</div>
+            <div class="data-desc" style="padding:0 0 12px;">扫码后自动查询商品名称，减少手动输入。</div>
+            <div class="nav-card">
+                <div class="nav-card-row">
+                    <span class="nav-card-label">数据源</span>
+                    <div class="nav-card-select-wrap">
+                        <select class="nav-card-select" id="apiPlatform" onchange="onApiPlatformChange()">
+                            <option value="none">暂不使用</option>
+                            <option value="juhe">聚合数据</option>
+                            <option value="shujubao">数据宝</option>
+                            <option value="alicloud">阿里云市场</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-section" style="padding-top:0;" id="apiKeyRow">
+            <div class="nav-card">
+                <div class="nav-card-row" id="apiKeyFieldWrap">
+                    <span class="nav-card-label" id="apiKeyLabel">AppKey / Token</span>
+                    <input type="password" id="apiAppKey" placeholder="填写 Key" autocomplete="off"
+                        style="flex:1;border:none;background:none;font-size:14px;text-align:right;outline:none;color:var(--sub);min-width:0;">
+                    <button type="button" onclick="toggleApiFieldVis('apiAppKey',this)" style="background:none;border:none;cursor:pointer;font-size:14px;color:#bbb;padding:0 0 0 6px;">👁</button>
+                </div>
+                <div class="nav-card-row" id="apiSecretFieldWrap" style="display:none;">
+                    <span class="nav-card-label" id="apiSecretLabel">AppSecret</span>
+                    <input type="password" id="apiAppSecret" placeholder="填写 Secret" autocomplete="off"
+                        style="flex:1;border:none;background:none;font-size:14px;text-align:right;outline:none;color:var(--sub);min-width:0;">
+                    <button type="button" onclick="toggleApiFieldVis('apiAppSecret',this)" style="background:none;border:none;cursor:pointer;font-size:14px;color:#bbb;padding:0 0 0 6px;">👁</button>
+                </div>
+                <div class="nav-card-row" id="apiUrlFieldWrap" style="display:none;">
+                    <span class="nav-card-label" id="apiUrlLabel">接口 URL</span>
+                    <input type="text" id="apiCustomUrl" autocomplete="off" placeholder="https://..."
+                        style="flex:1;border:none;background:none;font-size:13px;text-align:right;outline:none;color:var(--sub);min-width:0;">
+                </div>
+            </div>
+        </div>
+        <div class="nav-section" style="padding-top:0;">
+            <div class="api-cors-tip" id="apiCorsTip" style="margin-bottom:12px;"></div>
+            <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;border-radius:12px;" onclick="saveApiSettings()">保存</button>
+        </div>
+    </div>
 </div>
 
 <script>
 // ================================================================
 // 全局版本号
 // ================================================================
-const APP_VERSION = 'V9.0.2';
+const APP_VERSION = 'V9.2';
 document.title = `食品效期助手 ${APP_VERSION}`;
 
 // ================================================================
@@ -956,6 +1586,7 @@ function syncConfigToSettingsInputs() {
     document.getElementById('defProdDate').value = config.defProdDate;
     document.getElementById('defLife').value     = config.defLife;
     document.getElementById('defUnit').value     = config.defUnit;
+    _syncThemeSegmented();
 }
 
 function afterStoreSwitch() {
@@ -1576,8 +2207,9 @@ let isBatchMode = false, isAnalysisOpen = false, isShowWithdrawn = false, isShow
 // 初始化
 // ================================================================
 document.addEventListener('DOMContentLoaded', function() {
+    _initTheme();
     initStores(); loadStoreData(); updateStoreHeader();
-    initApiSettingsUI();
+    initApiSettingsUI(); updateApiEntryDesc();
     syncConfigToSettingsInputs();
     renderCategorySelect('其他'); renderCategoryManager(); renderBackupSlots();
     renderCatalogList(); renderAllList(); updateWarnBanner();
@@ -1623,20 +2255,190 @@ document.addEventListener('DOMContentLoaded', function() {
 // ================================================================
 // 导航
 // ================================================================
+// ================================================================
+// SPA 页面导航系统
+// ================================================================
+let _navStack = [];
+
+function navPush(pageId) {
+    // 准备要入栈的页面
+    const page = document.getElementById(pageId);
+    if (!page) return;
+
+    // 当前栈顶往后推
+    if (_navStack.length > 0) {
+        const topId = _navStack[_navStack.length - 1];
+        const top = document.getElementById(topId);
+        if (top) top.classList.add('nav-behind');
+    }
+
+    _navStack.push(pageId);
+    page.style.display = 'block';
+    // 触发 transition（需要一帧延迟）
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => page.classList.add('nav-active'));
+    });
+
+    // 根据页面做必要的数据初始化
+    if (pageId === 'page-settings-system') syncConfigToSettingsInputs();
+    if (pageId === 'page-settings-theme')  _syncThemeRows();
+    if (pageId === 'page-settings-category') renderCategoryManager();
+    if (pageId === 'page-settings-backup') { renderBackupSlots(); renderStorageInfo(); }
+    if (pageId === 'page-settings-api')    initApiSettingsUI();
+}
+
+function navPop() {
+    if (_navStack.length === 0) return;
+    const currentId = _navStack.pop();
+    const current = document.getElementById(currentId);
+    if (current) {
+        current.classList.remove('nav-active');
+        setTimeout(() => { current.style.display = 'none'; }, 320);
+    }
+    // 恢复上一页
+    if (_navStack.length > 0) {
+        const prevId = _navStack[_navStack.length - 1];
+        const prev = document.getElementById(prevId);
+        if (prev) prev.classList.remove('nav-behind');
+    }
+}
+
+function navClearAll() {
+    // 切换主 tab 时收起所有子页
+    [..._navStack].reverse().forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('nav-active', 'nav-behind'); el.style.display = 'none'; }
+    });
+    _navStack = [];
+}
+
+// ================================================================
+// 导航
+// ================================================================
 function switchTab(tabId) {
-    ['catalog','list'].forEach(t => {
+    navClearAll();
+    ['catalog','list','settings'].forEach(t => {
         document.getElementById(`view-${t}`).classList.toggle('active', t === tabId);
         document.getElementById(`nav-${t}`).classList.toggle('active', t === tabId);
     });
-    document.getElementById('headerTitle').textContent = tabId === 'catalog' ? '商品库' : '商店库存';
+    // 主 header：设置 tab 时隐藏门店栏（设置有自己的根标题）
+    const header = document.getElementById('mainHeader');
+    if (header) header.style.display = tabId === 'settings' ? 'none' : '';
+    const banner = document.getElementById('warnBanner');
+    if (banner) banner.style.display = tabId === 'settings' ? 'none' : '';
+
+    const htEl = document.getElementById('headerTitle');
+    if (htEl) htEl.textContent = tabId === 'catalog' ? '商品库' : '商店库存';
     if (tabId === 'list' && isAnalysisOpen) updateChart();
     if (tabId === 'catalog') renderCatalogList();
 }
-function toggleMenu() {
-    const sb = document.getElementById('sidebar'), ov = document.getElementById('overlay');
-    sb.classList.toggle('active');
-    ov.style.display = sb.classList.contains('active') ? 'block' : 'none';
+
+function toggleMenu() { /* 侧边栏已移除，保留空函数防止旧调用报错 */ }
+
+// Fix #7: 条码API折叠展开
+function toggleApiSection() {
+    const box = document.getElementById('apiSection');
+    const arrow = document.getElementById('apiSectionArrow');
+    if (!box) return;
+    const isOpen = box.style.display !== 'none';
+    box.style.display = isOpen ? 'none' : 'block';
+    if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
+
+// Fix #2: 存储概况（APP 版侧重数据量，不做容量预警）
+function renderStorageInfo() {
+    const box = document.getElementById('storageInfoContent');
+    if (!box) return;
+    try {
+        const storeCount = stores.length;
+        let totalBytes = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            const v = localStorage.getItem(k) || '';
+            totalBytes += (k.length + v.length) * 2; // UTF-16
+        }
+        const kb = (totalBytes / 1024).toFixed(1);
+        const catCount  = catalog.length;
+        const invCount  = inventory.length;
+        const activeInv = inventory.filter(i => i.status !== 'withdrawn').length;
+
+        box.innerHTML = [
+            `门店数量：<b>${storeCount}</b> 家`,
+            `商品库：<b>${catCount}</b> 个品类`,
+            `批次记录：<b>${activeInv}</b> 条在架 / 共 <b>${invCount}</b> 条`,
+            `本地数据：约 <b>${kb} KB</b>`,
+        ].join('<br>');
+    } catch(e) {
+        box.textContent = '获取失败';
+    }
+}
+// ================================================================
+// 主题系统
+// ================================================================
+let _systemThemeWatcher = null;
+
+function _applyTheme(pref) {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = pref === 'dark' || (pref === 'system' && prefersDark);
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    // 同步更新所有 theme-color meta（覆盖浏览器工具栏颜色）
+    const color = isDark ? '#1e1e1e' : '#ffffff';
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => {
+        m.setAttribute('content', color);
+    });
+    // 重绘图表（如果打开中）
+    if (typeof chartInstance !== 'undefined' && chartInstance) {
+        try { chartInstance.resize(); } catch(e) {}
+    }
+}
+
+function setTheme(pref) {
+    localStorage.setItem('foodTheme', pref);
+    _applyTheme(pref);
+    _syncThemeSegmented();
+    // 跟随系统时动态监听系统切换
+    if (_systemThemeWatcher) { _systemThemeWatcher.removeEventListener('change', _onSystemThemeChange); }
+    if (pref === 'system') {
+        _systemThemeWatcher = window.matchMedia('(prefers-color-scheme: dark)');
+        _systemThemeWatcher.addEventListener('change', _onSystemThemeChange);
+    }
+}
+
+function _onSystemThemeChange() {
+    const pref = localStorage.getItem('foodTheme') || 'system';
+    if (pref === 'system') _applyTheme('system');
+}
+
+function _syncThemeSegmented() {
+    const pref = localStorage.getItem('foodTheme') || 'system';
+    ['light','system','dark'].forEach(v => {
+        const btn = document.getElementById('theme-' + v);
+        if (btn) btn.classList.toggle('active', v === pref);
+    });
+    _syncThemeRows();
+}
+
+function _syncThemeRows() {
+    const pref = localStorage.getItem('foodTheme') || 'system';
+    ['light','system','dark'].forEach(v => {
+        const row = document.getElementById('theme-row-' + v);
+        if (row) row.classList.toggle('selected', v === pref);
+    });
+    // 更新设置根页面的副标题
+    const desc = document.getElementById('themeEntryDesc');
+    if (desc) desc.textContent = pref === 'light' ? '浅色' : pref === 'dark' ? '深色' : '跟随系统';
+}
+
+function _initTheme() {
+    const pref = localStorage.getItem('foodTheme') || 'system';
+    _applyTheme(pref);
+    _syncThemeSegmented();
+    if (pref === 'system') {
+        _systemThemeWatcher = window.matchMedia('(prefers-color-scheme: dark)');
+        _systemThemeWatcher.addEventListener('change', _onSystemThemeChange);
+    }
+}
+
 function saveSettings() {
     config.warnDays   = Math.max(1, parseInt(document.getElementById('warnDays').value) || 7);
     config.defProdDate = document.getElementById('defProdDate').value;
@@ -1645,7 +2447,7 @@ function saveSettings() {
     safeLSSet(sk('foodConfig'), JSON.stringify(config));
     showToast('✅ 设置已保存');
     renderCatalogList(); renderAllList(); updateWarnBanner();
-    toggleMenu();
+    navPop();
 }
 
 // ================================================================
@@ -1800,6 +2602,8 @@ function openAddBatchModal(catalogId, batchId) {
     }
     document.getElementById('editBatchId').value = _editingBatchId || '';
     document.getElementById('batchCatalogId').value = _pickedCatalogId || '';
+    // Fix #3: 禁止选择未来日期
+    document.getElementById('bmDate').max = getLocalDateStr();
     _updateBatchPickerUI();
     document.getElementById('addBatchModal').classList.add('active');
 }
@@ -2053,6 +2857,8 @@ function batchDelete() {
             document.getElementById('selectAllCB').checked = false;
             syncData();
             showToast(`已删除 ${cnt} 条记录`);
+            // Fix #6: 操作完成后自动退出批量模式
+            if (isBatchMode) toggleBatchMode();
         },
         `确认删除 ${cnt} 条`
     );
@@ -2073,6 +2879,8 @@ function batchWithdraw() {
             document.getElementById('selectAllCB').checked = false;
             syncData();
             showToast(`已下架 ${cnt} 条记录`);
+            // Fix #6: 操作完成后自动退出批量模式
+            if (isBatchMode) toggleBatchMode();
         },
         `确认下架 ${cnt} 条`
     );
@@ -2237,6 +3045,16 @@ function createProductCard(p, todayStr, warningThreshold, todayMs, catMap, showB
               : `<button class="item-copy-pill" data-action="copy" data-id="${safeId}">➕ 录同款</button>`
             }
         </div>`;
+
+    // Fix #5: 批量模式下点击卡片任意位置可勾选
+    if (enableBatch) {
+        div.style.cursor = 'pointer';
+        div.addEventListener('click', function(e) {
+            if (e.target.closest('button') || e.target.tagName === 'INPUT') return;
+            const cb = div.querySelector('.item-checkbox');
+            if (cb) { cb.checked = !cb.checked; updateBatchDeleteBtn(); }
+        });
+    }
 
     // 左滑删除包装（批量模式不启用）
     if (!enableBatch) {
@@ -2667,7 +3485,6 @@ function openImportModal() {
     }
     selectImportMode('merge');
     document.getElementById('importModal').classList.add('active');
-    toggleMenu();
 }
 
 function selectImportMode(mode) {
@@ -2749,15 +3566,43 @@ function checkXLSX() {
     return false;
 }
 
-function downloadJson(obj, filename) {
-    const blob = new Blob([JSON.stringify(obj, _stripTempFields, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
+// ── 统一文件保存（自动判断 Capacitor / 浏览器环境）──
+async function _saveFile(blob, filename) {
+    // Capacitor 原生环境：弹出系统文件保存对话框
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+        try {
+            const { Filesystem, Directory } = window.Capacitor.Plugins;
+            const reader = new FileReader();
+            const base64 = await new Promise((res, rej) => {
+                reader.onload = () => res(reader.result.split(',')[1]);
+                reader.onerror = rej;
+                reader.readAsDataURL(blob);
+            });
+            const result = await Filesystem.writeFile({
+                path:      filename,
+                data:      base64,
+                directory: Directory.Downloads,
+                recursive: true,
+            });
+            showToast(`✅ 已保存到下载文件夹：${filename}`, 3500);
+            return;
+        } catch(e) {
+            console.warn('Capacitor 保存失败，回退到浏览器下载', e);
+        }
+    }
+    // 浏览器环境：触发下载
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
     a.href = url; a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+function downloadJson(obj, filename) {
+    const blob = new Blob([JSON.stringify(obj, _stripTempFields, 2)], { type: 'application/json' });
+    _saveFile(blob, filename);
 }
 
 function exportCatalogJson() {
@@ -2781,7 +3626,7 @@ function exportCatalogJson() {
     }
 }
 
-function exportToExcel() {
+async function exportToExcel() {
     if (!checkXLSX()) return;
     if (!inventory.length) return showToast('⚠️ 库中没有记录可以导出');
     try {
@@ -2831,7 +3676,11 @@ function exportToExcel() {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataSheet), '产品台账');
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(noteSheet),  '字段说明');
-        XLSX.writeFile(wb, `门店产品信息_${storeName}_${fileTs()}.xlsx`);
+        const xlsxBlob = new Blob(
+            [XLSX.write(wb, { bookType: 'xlsx', type: 'array' })],
+            { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+        );
+        await _saveFile(xlsxBlob, `门店产品信息_${storeName}_${fileTs()}.xlsx`);
         showToast('✅ 产品台账已导出');
     } catch(e) {
         showToast('❌ 导出失败：' + e.message, 4000);
@@ -2990,7 +3839,6 @@ function clearAllData() {
             localStorage.removeItem(sk('foodProducts'));
             localStorage.removeItem(sk('foodProducts_legacy'));
             syncData();
-            toggleMenu();
             showToast('已清空本店所有记录');
         },
         `确认清空 ${cnt} 条`
@@ -3038,7 +3886,8 @@ function saveApiSettings() {
     }));
     updateApiStatusBadge();
     showToast('✅ API 设置已保存');
-    toggleMenu();
+    navPop();
+    updateApiEntryDesc();
 }
 function onApiPlatformChange() {
     const p    = document.getElementById('apiPlatform').value;
@@ -3075,6 +3924,16 @@ function updateApiStatusBadge() {
     } else {
         badge.className = 'api-status-badge ok';
         badge.textContent = (API_PLATFORM_INFO[p]||{}).name || p;
+    }
+}
+function updateApiEntryDesc() {
+    const el = document.getElementById('apiEntryDesc');
+    if (!el) return;
+    const p = _apiConfig.platform;
+    if (p === 'none' || !_apiConfig.appKey) {
+        el.textContent = '未配置';
+    } else {
+        el.textContent = '已配置：' + ((API_PLATFORM_INFO[p]||{}).name || p);
     }
 }
 function toggleApiFieldVis(inputId, btn) {
