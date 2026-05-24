@@ -1,507 +1,635 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Python代码智能缩进工具 - 手机优化版 v2.2 (Web版)</title>
-    <style>
-        :root {
-            --primary: #4CAF50;
-            --danger: #f44336;
-            --info: #2196F3;
-            --warning: #ff9800;
-            --bg-color: #f5f5f5;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-            --border-color: #dddddd;
-            --font-size: 14px;
-            --btn-height: 45px;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-size: var(--font-size);
-            margin: 0;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        h2 { font-size: 18px; margin-top: 0; text-align: center; }
-        p.desc { font-size: 12px; color: #666; margin-bottom: 15px; }
-
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-
-        textarea, select, input[type="text"], input[type="number"] {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
-        }
-
-        textarea { height: 200px; resize: vertical; }
-        textarea#reportArea { height: 100px; background-color: #f9f9f9; }
-
-        .radio-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
-        .radio-item { display: flex; align-items: center; gap: 5px; font-size: 13px;}
-
-        .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        button {
-            flex: 1;
-            height: var(--btn-height);
-            border: none;
-            border-radius: 5px;
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.2s;
-        }
-        button:active { opacity: 0.8; }
-        
-        .btn-success { background-color: var(--primary); }
-        .btn-danger { background-color: var(--danger); }
-        .btn-primary { background-color: var(--info); }
-        .btn-warning { background-color: var(--warning); color: #fff;}
-        .btn-full { width: 100%; margin-bottom: 10px; }
-
-        #statusArea {
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 5px;
-            font-weight: bold;
-            text-align: center;
-            background-color: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .hidden { display: none !important; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>文本工具箱：空白检测 + Python缩进</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --primary: #4a90e2;
+      --success: #4CAF50;
+      --danger: #f44336;
+      --info: #2196F3;
+      --warning: #ff9800;
+      --secondary: #50c878;
+      --special: #a29bfe;
+      --bg: #f4f4f9;
+      --card: #ffffff;
+      --text: #333333;
+      --muted: #666666;
+      --border: #dddddd;
+      --shadow: 0 10px 25px rgba(0,0,0,0.06);
+      --radius: 12px;
+      --mono: Consolas, Monaco, 'Courier New', monospace;
+    }
+    body {
+      margin: 0;
+      padding: 16px;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+    }
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    h1 {
+      margin: 0 0 14px;
+      text-align: center;
+      font-size: 22px;
+      color: #2c3e50;
+    }
+    h2 { margin: 0 0 12px; text-align: center; font-size: 18px; color: #2c3e50; }
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: #f8f9fa;
+      color: #333;
+      border-radius: 10px;
+      padding: 12px 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(74,144,226,.22);
+    }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 0 0 15px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: bold; margin-bottom: 6px; }
+    textarea, select, input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 14px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    textarea:focus, select:focus, input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(74,144,226,.1);
+    }
+    textarea { height: 190px; resize: vertical; }
+    #indentReportArea { height: 100px; background: #f9f9f9; }
+    .toolbar, .btn-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    button {
+      min-height: 44px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .1s, opacity .2s;
+    }
+    button:active { transform: scale(.98); }
+    button:hover { opacity: .92; }
+    .btn { flex: 1; padding: 10px 16px; }
+    .btn-light { background: #f1f2f6; color: #333; }
+    .btn-check { background: var(--primary); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-primary { background: var(--info); color: #fff; }
+    .btn-warning { background: var(--warning); color: #fff; }
+    .btn-full { width: 100%; margin-bottom: 12px; }
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 18px;
+    }
+    .card {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 15px;
+      border-top: 4px solid #ccc;
+    }
+    .card-head { border-top-color: var(--primary); }
+    .card-total { border-top-color: var(--secondary); }
+    .card-title { font-weight: 800; margin-bottom: 10px; }
+    .big-number { font-size: 2rem; font-weight: 900; display: block; margin: 8px 0; }
+    .card-head .big-number { color: var(--primary); }
+    .card-total .big-number { color: var(--secondary); }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: .9rem;
+      margin-bottom: 5px;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed #e0e0e0;
+    }
+    .preview-section { margin-top: 22px; border-top: 1px solid #eee; padding-top: 14px; }
+    .preview-box {
+      background: #2d3436;
+      color: #dfe6e9;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: var(--mono);
+      white-space: pre;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .v-space { color: #fdcb6e; }
+    .v-tab { color: #0984e3; }
+    .v-enter { color: #ff7675; }
+    .v-special { color: var(--special); }
+    .v-content { color: #fff; border-bottom: 1px solid #555; }
+    .radio-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
+    .radio-item { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; }
+    .indent-row { display: flex; gap: 10px; }
+    #indentStatusArea {
+      padding: 10px;
+      margin: 10px 0 15px;
+      border-radius: 8px;
+      font-weight: 800;
+      text-align: center;
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .hidden { display: none !important; }
+    @media (max-width: 640px) {
+      body { padding: 10px; }
+      .container { padding: 14px; }
+      .tabs, .dashboard { grid-template-columns: 1fr; }
+      .toolbar, .btn-row, .indent-row { flex-direction: column; }
+      h1 { font-size: 19px; }
+      textarea { height: 170px; }
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>🧰 文本工具箱</h1>
+    <div class="tabs" role="tablist" aria-label="工具切换">
+      <button class="tab-btn active" id="tabWhitespace" onclick="showTool('whitespace')">空白字符检测</button>
+      <button class="tab-btn" id="tabIndent" onclick="showTool('indent')">Python代码缩进</button>
+    </div>
 
-<div class="container">
-    <h2>🐍 Python代码智能缩进工具</h2>
-    <p class="desc">
+    <section class="panel active" id="whitespacePanel">
+      <h2>空白字符检测工具</h2>
+      <div class="form-group">
+        <textarea id="whitespaceInputArea" aria-label="文本输入区" placeholder="请在此处粘贴或输入文本..."></textarea>
+      </div>
+      <div class="toolbar">
+        <button class="btn btn-light" onclick="whitespacePasteText()">📋 粘贴内容</button>
+        <button class="btn btn-danger" onclick="whitespaceClearText()">🗑️ 清空</button>
+        <button class="btn btn-check" onclick="analyzeWhitespaceText()">✅ 立即检测</button>
+      </div>
+      <div class="dashboard" id="whitespaceDashboard" style="display:none;">
+        <div class="card card-head">
+          <div class="card-title">头部空白字符 (Leading)</div>
+          <span class="big-number" id="headTotal">0</span>
+          <div class="detail-row"><span>半角空格 (Space)</span><span id="headSpace">0</span></div>
+          <div class="detail-row"><span>制表符 (Tab)</span><span id="headTab">0</span></div>
+          <div class="detail-row"><span>回车/换行 (CR/LF)</span><span id="headEnter">0</span></div>
+          <div class="detail-row"><span>特殊空白 (如全角空格)</span><span id="headSpecial">0</span></div>
+        </div>
+        <div class="card card-total">
+          <div class="card-title">全文总空白字符 (Total)</div>
+          <span class="big-number" id="allTotal">0</span>
+          <div class="detail-row"><span>半角空格 (Space)</span><span id="allSpace">0</span></div>
+          <div class="detail-row"><span>制表符 (Tab)</span><span id="allTab">0</span></div>
+          <div class="detail-row"><span>回车/换行 (CR/LF)</span><span id="allEnter">0</span></div>
+          <div class="detail-row"><span>特殊空白 (如全角空格)</span><span id="allSpecial">0</span></div>
+        </div>
+      </div>
+      <div class="preview-section" id="whitespacePreviewSection" style="display:none;">
+        <div style="margin-bottom:8px;font-size:.9rem;font-weight:800;color:#555;">头部不可见字符透视：</div>
+        <div class="preview-box" id="visualPreview"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="indentPanel">
+      <h2>🐍 Python代码智能缩进工具</h2>
+      <p class="desc">
         <strong>智能缩进</strong>：不破坏现有结构，智能判断追加。<br>
         <strong>全部缩进</strong>：所有代码右移。<br>
         <strong>替换式缩进</strong>：重新计算整体排版。<br>
         <strong>减少缩进</strong>：左移代码。
-    </p>
-
-    <div class="form-group">
-        <label>输入代码：</label>
-        <textarea id="inputArea" placeholder="粘贴Python代码到这里..."></textarea>
-    </div>
-
-    <div class="form-group">
+      </p>
+      <div class="form-group">
+        <label for="indentInputArea">输入代码：</label>
+        <textarea id="indentInputArea" placeholder="粘贴Python代码到这里..."></textarea>
+      </div>
+      <div class="form-group">
         <label>处理模式：</label>
         <div class="radio-group">
-            <label class="radio-item"><input type="radio" name="mode" value="smart_indent" checked> 智能缩进</label>
-            <label class="radio-item"><input type="radio" name="mode" value="all_indent"> 全部缩进</label>
-            <label class="radio-item"><input type="radio" name="mode" value="replace_indent"> 替换式</label>
-            <label class="radio-item"><input type="radio" name="mode" value="reduce_indent"> 减少缩进</label>
+          <label class="radio-item"><input type="radio" name="indentMode" value="smart_indent" checked> 智能缩进</label>
+          <label class="radio-item"><input type="radio" name="indentMode" value="all_indent"> 全部缩进</label>
+          <label class="radio-item"><input type="radio" name="indentMode" value="replace_indent"> 替换式</label>
+          <label class="radio-item"><input type="radio" name="indentMode" value="reduce_indent"> 减少缩进</label>
         </div>
-    </div>
-
-    <div class="form-group">
+      </div>
+      <div class="form-group">
         <label>缩进设置：</label>
-        <div style="display: flex; gap: 10px;">
-            <select id="indentChoice" style="flex: 2;">
-                <option value="    ">4空格 (Python推荐)</option>
-                <option value="  ">2空格</option>
-                <option value="\t">Tab键</option>
-                <option value="CUSTOM">自定义</option>
-            </select>
-            <input type="number" id="indentLevel" value="1" min="1" max="10" style="flex: 1;" title="缩进级别">
+        <div class="indent-row">
+          <select id="indentChoice" style="flex:2;">
+            <option value="    ">4空格 (Python推荐)</option>
+            <option value="  ">2空格</option>
+            <option value="\t">Tab键</option>
+            <option value="CUSTOM">自定义</option>
+          </select>
+          <input type="number" id="indentLevel" value="1" min="1" max="10" style="flex:1;" title="缩进级别">
         </div>
-        <input type="text" id="customChar" class="hidden" placeholder="输入自定义字符" style="margin-top: 10px;">
-    </div>
+        <input type="text" id="customChar" class="hidden" placeholder="输入自定义字符" style="margin-top:10px;">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-success" onclick="processIndentCode()">✨ 智能处理</button>
+        <button class="btn btn-danger" onclick="clearIndentAll()">🗑️ 清除</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="swapIndentText()">⇄ 交换</button>
+        <button class="btn btn-warning" onclick="fixIndentEncoding()">🔧 修复编码</button>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="copyIndentResult()">📋 复制结果</button>
+      <div id="indentStatusArea">准备就绪，请输入Python代码</div>
+      <div class="form-group">
+        <label for="indentOutputArea">处理结果：</label>
+        <textarea id="indentOutputArea" placeholder="处理结果将显示在这里..." readonly></textarea>
+      </div>
+      <div class="form-group">
+        <label for="indentReportArea">分析报告：</label>
+        <textarea id="indentReportArea" readonly></textarea>
+      </div>
+    </section>
+  </div>
 
-    <div class="btn-row">
-        <button class="btn-success" onclick="processCode()">✨ 智能处理</button>
-        <button class="btn-danger" onclick="clearAll()">🗑️ 清除</button>
-    </div>
-    <div class="btn-row">
-        <button class="btn-primary" onclick="swapText()">⇄ 交换</button>
-        <button class="btn-warning" onclick="fixEncoding()">🔧 修复编码</button>
-    </div>
-    <button class="btn-primary btn-full" onclick="copyResult()">📋 复制结果</button>
+  <script>
+    function showTool(name) {
+      const whitespace = name === 'whitespace';
+      document.getElementById('whitespacePanel').classList.toggle('active', whitespace);
+      document.getElementById('indentPanel').classList.toggle('active', !whitespace);
+      document.getElementById('tabWhitespace').classList.toggle('active', whitespace);
+      document.getElementById('tabIndent').classList.toggle('active', !whitespace);
+    }
 
-    <div id="statusArea">准备就绪，请输入Python代码</div>
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
 
-    <div class="form-group">
-        <label>处理结果：</label>
-        <textarea id="outputArea" placeholder="处理结果将显示在这里..." readonly></textarea>
-    </div>
+    const whitespaceInputArea = document.getElementById('whitespaceInputArea');
+    whitespaceInputArea.addEventListener('input', debounce(analyzeWhitespaceText, 300));
 
-    <div class="form-group">
-        <label>分析报告：</label>
-        <textarea id="reportArea" readonly></textarea>
-    </div>
-</div>
+    async function whitespacePasteText() {
+      try {
+        const text = await navigator.clipboard.readText();
+        whitespaceInputArea.value = text;
+        analyzeWhitespaceText();
+      } catch (err) {
+        alert('无法读取剪贴板，请尝试手动粘贴 (Ctrl+V)');
+      }
+    }
 
-<script>
-    // 监听自定义缩进选项
-    document.getElementById('indentChoice').addEventListener('change', function(e) {
-        const customInput = document.getElementById('customChar');
-        if (e.target.value === 'CUSTOM') {
-            customInput.classList.remove('hidden');
+    function whitespaceClearText() {
+      whitespaceInputArea.value = '';
+      whitespaceInputArea.focus();
+      analyzeWhitespaceText();
+    }
+
+    function analyzeWhitespaceText() {
+      const text = whitespaceInputArea.value;
+      const dashboard = document.getElementById('whitespaceDashboard');
+      const previewSection = document.getElementById('whitespacePreviewSection');
+      if (text.length === 0) {
+        dashboard.style.display = 'none';
+        previewSection.style.display = 'none';
+        return;
+      }
+      dashboard.style.display = 'grid';
+      previewSection.style.display = 'block';
+      const headMatch = text.match(/^\s*/);
+      const headStr = headMatch ? headMatch[0] : '';
+      updateWhitespaceStats('head', headStr);
+      const allMatch = text.match(/\s/g);
+      const allStr = allMatch ? allMatch.join('') : '';
+      updateWhitespaceStats('all', allStr);
+      generateWhitespacePreview(headStr, text);
+    }
+
+    function updateWhitespaceStats(prefix, str) {
+      const total = str.length;
+      const spaces = (str.match(/ /g) || []).length;
+      const tabs = (str.match(/\t/g) || []).length;
+      const enters = (str.match(/[\r\n]/g) || []).length;
+      const specialSpaces = total - spaces - tabs - enters;
+      document.getElementById(prefix + 'Total').textContent = total;
+      document.getElementById(prefix + 'Space').textContent = spaces;
+      document.getElementById(prefix + 'Tab').textContent = tabs;
+      document.getElementById(prefix + 'Enter').textContent = enters;
+      document.getElementById(prefix + 'Special').textContent = specialSpaces;
+    }
+
+    function generateWhitespacePreview(leadingWhitespace, fullText) {
+      let html = '';
+      for (let i = 0; i < leadingWhitespace.length; i++) {
+        const char = leadingWhitespace[i];
+        if (char === ' ') {
+          html += '<span class="v-space" title="半角空格">·</span>';
+        } else if (char === '\t') {
+          html += '<span class="v-tab" title="制表符">→</span>';
+        } else if (char === '\r') {
+          if (leadingWhitespace[i + 1] === '\n') {
+            html += '<span class="v-enter" title="换行(CRLF)">↵</span><br>';
+            i++;
+          } else {
+            html += '<span class="v-enter" title="回车(CR)">↵</span><br>';
+          }
+        } else if (char === '\n') {
+          html += '<span class="v-enter" title="换行(LF)">↵</span><br>';
         } else {
-            customInput.classList.add('hidden');
+          const hex = char.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0');
+          html += `<span class="v-special" title="特殊空白 (U+${hex})">✧</span>`;
         }
+      }
+      if (fullText.length > leadingWhitespace.length) {
+        const content = fullText.substr(leadingWhitespace.length, 15);
+        html += `<span class="v-content">${escapeHtml(content)}...</span>`;
+      } else {
+        html += '<span style="color:#777;font-style:italic;">(之后无内容)</span>';
+      }
+      document.getElementById('visualPreview').innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    document.getElementById('indentChoice').addEventListener('change', function(e) {
+      const customInput = document.getElementById('customChar');
+      customInput.classList.toggle('hidden', e.target.value !== 'CUSTOM');
     });
 
-    // 辅助函数：判断行是否应该缩进
     function shouldIndentLine(line, lineNum, allLines, forceFirstLine = false) {
-        const stripped = line.trim();
-        if (!stripped) return { shouldIndent: false, reason: "空行" };
-
-        // [修复1] forceFirstLine 早返回只保留一处，后续所有分支删除重复判断
-        if (forceFirstLine && lineNum === 0) return { shouldIndent: true, reason: "强制首行缩进" };
-
-        if (stripped.startsWith('#')) {
-            const markers = ['file:', 'author:', 'date:', 'description:', '===', '---'];
-            if (markers.some(m => stripped.toLowerCase().includes(m))) return { shouldIndent: false, reason: "文档注释" };
-            
-            let prevLine = "";
-            for (let i = lineNum - 1; i >= 0; i--) {
-                if (allLines[i].trim()) {
-                    prevLine = allLines[i].trim();
-                    break;
-                }
-            }
-            if (prevLine.endsWith(':') || /^(if |for |while |def |class |try:|except|with )/.test(prevLine)) {
-                return { shouldIndent: true, reason: "块内注释" };
-            }
-            return { shouldIndent: false, reason: "顶级注释" };
-        }
-
-        // [修复1] 移除此处冗余的 forceFirstLine && lineNum === 0 判断（原版196行）
-        if (/^(import |from )/.test(stripped)) {
-            return { shouldIndent: false, reason: "import语句" };
-        }
-
-        // [修复2] 仅对顶层（未缩进）的 def/class/@ 才判定为"不缩进"
-        // 原版对 stripped 做正则，导致类内缩进的装饰器也被误判为顶级定义
-        // [修复1] 同时移除此处冗余的 forceFirstLine && lineNum === 0 判断（原版201行）
-        if (/^(def |class |@)/.test(stripped) && !/^[ \t]/.test(line)) {
-            return { shouldIndent: false, reason: "函数/类定义" };
-        }
-
-        if (stripped.startsWith('if ') && stripped.includes('__name__') && stripped.includes('__main__')) {
-            // [修复1] 移除此处冗余的 forceFirstLine && lineNum === 0 判断（原版206行）
-            return { shouldIndent: false, reason: "主程序入口" };
-        }
-
-        if (/^(try:|except|finally:)/.test(stripped)) {
-            if (/^[ \t]/.test(line)) return { shouldIndent: true, reason: "已缩进的异常处理" };
-            // [修复1] 移除此处冗余的 forceFirstLine && lineNum === 0 判断（原版212行）
-            return { shouldIndent: false, reason: "顶级异常处理" };
-        }
-
-        if (/^[A-Z_][A-Z0-9_]*\s*=/.test(stripped)) {
-            // [修复1] 移除此处冗余的 forceFirstLine && lineNum === 0 判断（原版217行）
-            return { shouldIndent: false, reason: "全局常量" };
-        }
-
-        if (/^[ \t]/.test(line)) return { shouldIndent: true, reason: "已缩进代码" };
-
-        let prevLine = "";
+      const stripped = line.trim();
+      if (!stripped) return { shouldIndent: false, reason: '空行' };
+      if (forceFirstLine && lineNum === 0) return { shouldIndent: true, reason: '强制首行缩进' };
+      if (stripped.startsWith('#')) {
+        const markers = ['file:', 'author:', 'date:', 'description:', '===', '---'];
+        if (markers.some(m => stripped.toLowerCase().includes(m))) return { shouldIndent: false, reason: '文档注释' };
+        let prevLine = '';
         for (let i = lineNum - 1; i >= 0; i--) {
-            if (allLines[i].trim()) {
-                prevLine = allLines[i].trim();
-                break;
-            }
+          if (allLines[i].trim()) { prevLine = allLines[i].trim(); break; }
         }
-        if (prevLine.endsWith(':')) return { shouldIndent: true, reason: "块内代码" };
-
-        if (forceFirstLine || lineNum > 0) {
-            for (let i = lineNum - 1; i >= 0; i--) {
-                if (allLines[i].trim()) {
-                    if (/^[ \t]/.test(allLines[i])) return { shouldIndent: true, reason: "跟随前行缩进" };
-                    break;
-                }
-            }
+        if (prevLine.endsWith(':') || /^(if |for |while |def |class |try:|except|with )/.test(prevLine)) {
+          return { shouldIndent: true, reason: '块内注释' };
         }
-
-        const simpleStmts = ['print(', 'return', 'break', 'continue', 'pass', 'raise', 'assert'];
-        if (simpleStmts.some(stmt => stripped.startsWith(stmt))) return { shouldIndent: true, reason: "简单语句" };
-
-        if (stripped.includes('=') || stripped.includes('(')) return { shouldIndent: true, reason: "赋值或函数调用" };
-
-        return { shouldIndent: true, reason: "默认缩进" };
+        return { shouldIndent: false, reason: '顶级注释' };
+      }
+      if (/^(import |from )/.test(stripped)) return { shouldIndent: false, reason: 'import语句' };
+      if (/^(def |class |@)/.test(stripped) && !/^[ \t]/.test(line)) return { shouldIndent: false, reason: '函数/类定义' };
+      if (stripped.startsWith('if ') && stripped.includes('__name__') && stripped.includes('__main__')) return { shouldIndent: false, reason: '主程序入口' };
+      if (/^(try:|except|finally:)/.test(stripped)) {
+        if (/^[ \t]/.test(line)) return { shouldIndent: true, reason: '已缩进的异常处理' };
+        return { shouldIndent: false, reason: '顶级异常处理' };
+      }
+      if (/^[A-Z_][A-Z0-9_]*\s*=/.test(stripped)) return { shouldIndent: false, reason: '全局常量' };
+      if (/^[ \t]/.test(line)) return { shouldIndent: true, reason: '已缩进代码' };
+      let prevLine = '';
+      for (let i = lineNum - 1; i >= 0; i--) {
+        if (allLines[i].trim()) { prevLine = allLines[i].trim(); break; }
+      }
+      if (prevLine.endsWith(':')) return { shouldIndent: true, reason: '块内代码' };
+      if (forceFirstLine || lineNum > 0) {
+        for (let i = lineNum - 1; i >= 0; i--) {
+          if (allLines[i].trim()) {
+            if (/^[ \t]/.test(allLines[i])) return { shouldIndent: true, reason: '跟随前行缩进' };
+            break;
+          }
+        }
+      }
+      const simpleStmts = ['print(', 'return', 'break', 'continue', 'pass', 'raise', 'assert'];
+      if (simpleStmts.some(stmt => stripped.startsWith(stmt))) return { shouldIndent: true, reason: '简单语句' };
+      if (stripped.includes('=') || stripped.includes('(')) return { shouldIndent: true, reason: '赋值或函数调用' };
+      return { shouldIndent: true, reason: '默认缩进' };
     }
 
-    // 智能缩进处理逻辑
     function smartIndent(text, indentChar, baseIndent, preserveExisting, forceFirstLine) {
-        if (!text.trim()) return { result: text, report: "空文本" };
-
-        const lines = text.split('\n');
-        const resultLines = [];
-        const reportLines = [];
-        const indentStr = indentChar.repeat(baseIndent);
-
-        lines.forEach((line, i) => {
-            const { shouldIndent, reason } = shouldIndentLine(line, i, lines, forceFirstLine);
-            const originalIndentStr = line.match(/^[ \t]*/)[0];
-            const originalIndent = originalIndentStr.length;
-
-            if (!line.trim()) {
-                resultLines.push(line);
-                return;
-            }
-
-            if (shouldIndent) {
-                if (preserveExisting) {
-                    if (originalIndent > 0) {
-                        resultLines.push(indentStr + line);
-                        reportLines.push(`行${i+1}: [增加] 在原有缩进基础上追加 (${reason})`);
-                    } else {
-                        resultLines.push(indentStr + line);
-                        reportLines.push(`行${i+1}: [添加] 新增缩进 (${reason})`);
-                    }
-                } else {
-                    resultLines.push(indentStr + line.trimStart());
-                    reportLines.push(`行${i+1}: [${originalIndent > 0 ? '替换' : '添加'}] ${originalIndent > 0 ? '替换原缩进' : '新增缩进'} (${reason})`);
-                }
+      if (!text.trim()) return { result: text, report: '空文本' };
+      const lines = text.split('\n');
+      const resultLines = [];
+      const reportLines = [];
+      const indentStr = indentChar.repeat(baseIndent);
+      lines.forEach((line, i) => {
+        const { shouldIndent, reason } = shouldIndentLine(line, i, lines, forceFirstLine);
+        const originalIndentStr = line.match(/^[ \t]*/)[0];
+        const originalIndent = originalIndentStr.length;
+        if (!line.trim()) { resultLines.push(line); return; }
+        if (shouldIndent) {
+          if (preserveExisting) {
+            if (originalIndent > 0) {
+              resultLines.push(indentStr + line);
+              reportLines.push(`行${i+1}: [增加] 在原有缩进基础上追加 (${reason})`);
             } else {
-                if (preserveExisting) {
-                    resultLines.push(line);
-                    if (originalIndent > 0) reportLines.push(`行${i+1}: [保持] 原有缩进不变 (${reason})`);
-                } else {
-                    resultLines.push(line.trimStart());
-                    if (originalIndent > 0) reportLines.push(`行${i+1}: [移除] 删除原缩进 (${reason})`);
-                }
+              resultLines.push(indentStr + line);
+              reportLines.push(`行${i+1}: [添加] 新增缩进 (${reason})`);
             }
-        });
-
-        let resultText = resultLines.join('\n');
-        if (text.endsWith('\n') && !resultText.endsWith('\n')) resultText += '\n';
-
-        // [修复6] 报告摘要与明细内容统一：分类统计，只展示"实际有变化"的行
-        const addedLines    = reportLines.filter(r => r.includes('[添加]') || r.includes('[增加]'));
-        const replacedLines = reportLines.filter(r => r.includes('[替换]'));
-        const removedLines  = reportLines.filter(r => r.includes('[移除]'));
-        const keptLines     = reportLines.filter(r => r.includes('[保持]'));
-
-        const summaryParts = [];
-        if (addedLines.length)    summaryParts.push(`新增/追加 ${addedLines.length} 行`);
-        if (replacedLines.length) summaryParts.push(`替换 ${replacedLines.length} 行`);
-        if (removedLines.length)  summaryParts.push(`移除 ${removedLines.length} 行`);
-        if (keptLines.length)     summaryParts.push(`保持 ${keptLines.length} 行`);
-        const summary = summaryParts.length > 0 ? summaryParts.join('，') : '无更改';
-
-        // 明细只展示真正有变化的行（不含"保持"），最多显示前10条
-        const changedLines = reportLines.filter(r => !r.includes('[保持]'));
-        let report = `共处理：${summary}\n` + changedLines.slice(0, 10).join('\n');
-        if (changedLines.length > 10) report += `\n... (共${changedLines.length}项实际更改)`;
-
-        return { result: resultText, report: report };
+          } else {
+            resultLines.push(indentStr + line.trimStart());
+            reportLines.push(`行${i+1}: [${originalIndent > 0 ? '替换' : '添加'}] ${originalIndent > 0 ? '替换原缩进' : '新增缩进'} (${reason})`);
+          }
+        } else {
+          if (preserveExisting) {
+            resultLines.push(line);
+            if (originalIndent > 0) reportLines.push(`行${i+1}: [保持] 原有缩进不变 (${reason})`);
+          } else {
+            resultLines.push(line.trimStart());
+            if (originalIndent > 0) reportLines.push(`行${i+1}: [移除] 删除原缩进 (${reason})`);
+          }
+        }
+      });
+      let resultText = resultLines.join('\n');
+      if (text.endsWith('\n') && !resultText.endsWith('\n')) resultText += '\n';
+      const addedLines = reportLines.filter(r => r.includes('[添加]') || r.includes('[增加]'));
+      const replacedLines = reportLines.filter(r => r.includes('[替换]'));
+      const removedLines = reportLines.filter(r => r.includes('[移除]'));
+      const keptLines = reportLines.filter(r => r.includes('[保持]'));
+      const summaryParts = [];
+      if (addedLines.length) summaryParts.push(`新增/追加 ${addedLines.length} 行`);
+      if (replacedLines.length) summaryParts.push(`替换 ${replacedLines.length} 行`);
+      if (removedLines.length) summaryParts.push(`移除 ${removedLines.length} 行`);
+      if (keptLines.length) summaryParts.push(`保持 ${keptLines.length} 行`);
+      const summary = summaryParts.length > 0 ? summaryParts.join('，') : '无更改';
+      const changedLines = reportLines.filter(r => !r.includes('[保持]'));
+      let report = `共处理：${summary}\n` + changedLines.slice(0, 10).join('\n');
+      if (changedLines.length > 10) report += `\n... (共${changedLines.length}项实际更改)`;
+      return { result: resultText, report };
     }
 
-    // [修复3] 减少缩进逻辑：按缩进单元数匹配，避免空格/Tab字符数混淆
     function reduceIndent(text, indentChar, reduceLevel) {
-        if (!text.trim()) return { result: text, report: "空文本" };
-        const lines = text.split('\n');
-        const removeStr = indentChar.repeat(reduceLevel);
-        let removedCount = 0;
-
-        const resultLines = lines.map(line => {
-            if (!line.trim()) return line;
-
-            // 优先：完整匹配 removeStr 前缀（最准确）
-            if (line.startsWith(removeStr)) {
-                removedCount++;
-                return line.substring(removeStr.length);
-            }
-
-            // 降级：按 indentChar 单元逐个计数，避免空格/Tab的length混淆
-            let unitCount = 0;
-            let pos = 0;
-            while (pos + indentChar.length <= line.length && line.startsWith(indentChar, pos)) {
-                unitCount++;
-                pos += indentChar.length;
-            }
-            if (unitCount > 0) {
-                // 移除尽可能多的单元，但不超过 reduceLevel
-                const removeUnits = Math.min(unitCount, reduceLevel);
-                removedCount++;
-                return line.substring(indentChar.length * removeUnits);
-            }
-
-            return line;
-        });
-
-        let resultText = resultLines.join('\n');
-        if (text.endsWith('\n') && !resultText.endsWith('\n')) resultText += '\n';
-        return { result: resultText, report: `移除了 ${removedCount} 行的缩进` };
+      if (!text.trim()) return { result: text, report: '空文本' };
+      const lines = text.split('\n');
+      const removeStr = indentChar.repeat(reduceLevel);
+      let removedCount = 0;
+      const resultLines = lines.map(line => {
+        if (!line.trim()) return line;
+        if (line.startsWith(removeStr)) {
+          removedCount++;
+          return line.substring(removeStr.length);
+        }
+        let unitCount = 0;
+        let pos = 0;
+        while (pos + indentChar.length <= line.length && line.startsWith(indentChar, pos)) {
+          unitCount++;
+          pos += indentChar.length;
+        }
+        if (unitCount > 0) {
+          const removeUnits = Math.min(unitCount, reduceLevel);
+          removedCount++;
+          return line.substring(indentChar.length * removeUnits);
+        }
+        return line;
+      });
+      let resultText = resultLines.join('\n');
+      if (text.endsWith('\n') && !resultText.endsWith('\n')) resultText += '\n';
+      return { result: resultText, report: `移除了 ${removedCount} 行的缩进` };
     }
 
-    // [修复4] 修复编码：用 TextDecoder 替代已废弃的 escape()
-    // escape() 对 U+0100 以上的字符产生 %uXXXX 而非 UTF-8 字节序列，导致非ASCII字符被错误处理
     function autoFixEncoding(text) {
-        if (!text) return { text: text, reason: "无需修复", changed: false };
-        try {
-            // 将字符串中每个字符当作 Latin-1 字节读取，再用 TextDecoder 以 UTF-8 重新解码
-            const bytes = new Uint8Array(text.length);
-            for (let i = 0; i < text.length; i++) {
-                const code = text.charCodeAt(i);
-                // 超出 Latin-1 范围说明不是典型的 Mojibake（UTF-8 被误读为 Latin-1）
-                if (code > 255) throw new Error("非Latin-1文本，跳过修复");
-                bytes[i] = code;
-            }
-            // fatal:true 确保无效 UTF-8 序列时直接抛出，而非静默替换为替换字符
-            const fixed = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-            if (fixed !== text && /[\u4e00-\u9fa5]/.test(fixed)) {
-                return { text: fixed, reason: "成功恢复中文字符 (UTF-8解析)", changed: true };
-            }
-        } catch (e) {
-            // 不是常规的 Mojibake，无需处理
+      if (!text) return { text, reason: '无需修复', changed: false };
+      try {
+        const bytes = new Uint8Array(text.length);
+        for (let i = 0; i < text.length; i++) {
+          const code = text.charCodeAt(i);
+          if (code > 255) throw new Error('非Latin-1文本，跳过修复');
+          bytes[i] = code;
         }
-        return { text: text, reason: "未检测到可修复的常见乱码", changed: false };
+        const fixed = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        if (fixed !== text && /[\u4e00-\u9fa5]/.test(fixed)) {
+          return { text: fixed, reason: '成功恢复中文字符 (UTF-8解析)', changed: true };
+        }
+      } catch (e) {}
+      return { text, reason: '未检测到可修复的常见乱码', changed: false };
     }
 
-    // 主处理流程
-    let runCounter = 0;
-    function setStatus(msg, type) {
-        const el = document.getElementById('statusArea');
-        el.innerHTML = msg;
-        el.style.backgroundColor = type === 'error' ? '#ffebee' : (type === 'warn' ? '#fff3e0' : '#e8f5e9');
-        el.style.color = type === 'error' ? '#c62828' : (type === 'warn' ? '#ef6c00' : '#2e7d32');
+    let indentRunCounter = 0;
+    function setIndentStatus(msg, type) {
+      const el = document.getElementById('indentStatusArea');
+      el.innerHTML = msg;
+      el.style.backgroundColor = type === 'error' ? '#ffebee' : (type === 'warn' ? '#fff3e0' : '#e8f5e9');
+      el.style.color = type === 'error' ? '#c62828' : (type === 'warn' ? '#ef6c00' : '#2e7d32');
     }
 
-    function processCode() {
-        runCounter++;
-        const text = document.getElementById('inputArea').value;
-        if (!text.trim()) {
-            setStatus('❌ 请输入代码内容', 'error');
-            return;
-        }
-
-        const mode = document.querySelector('input[name="mode"]:checked').value;
-        const selectChoice = document.getElementById('indentChoice').value;
-        const indentChar = selectChoice === 'CUSTOM' ? (document.getElementById('customChar').value || '    ') : selectChoice;
-        const level = parseInt(document.getElementById('indentLevel').value) || 1;
-
-        let result = text;
-        let report = "";
-        let successMsg = "";
-
-        try {
-            if (mode === 'smart_indent') {
-                const res = smartIndent(text, indentChar, level, true, true);
-                result = res.result; report = res.report; successMsg = "智能缩进处理完成";
-            } else if (mode === 'all_indent') {
-                const lines = text.split('\n');
-                const indentStr = indentChar.repeat(level);
-                let added = 0;
-                result = lines.map(l => { if(l.trim()){ added++; return indentStr + l; } return l; }).join('\n');
-                if (text.endsWith('\n') && !result.endsWith('\n')) result += '\n';
-                report = `所有非空行都在原有基础上增加了缩进（共${added}行）`;
-                successMsg = "全部缩进完成";
-            } else if (mode === 'reduce_indent') {
-                const res = reduceIndent(text, indentChar, level);
-                result = res.result; report = res.report; successMsg = "减少缩进完成";
-            } else { // replace_indent
-                const res = smartIndent(text, indentChar, level, false, false);
-                result = res.result; report = res.report; successMsg = "替换式缩进完成";
-            }
-
-            document.getElementById('outputArea').value = result;
-            document.getElementById('reportArea').value = report;
-            setStatus(`✓ ${successMsg} (运行#${runCounter})`, 'success');
-        } catch (error) {
-            setStatus(`❌ 处理出错: ${error.message}`, 'error');
-        }
-    }
-
-    function clearAll() {
-        document.getElementById('inputArea').value = '';
-        document.getElementById('outputArea').value = '';
-        document.getElementById('reportArea').value = '';
-        setStatus('✓ 已清除所有内容', 'success');
-    }
-
-    function swapText() {
-        const out = document.getElementById('outputArea').value;
-        if (!out.trim()) {
-            setStatus('⚠ 输出区为空，无法交换', 'warn');
-            return;
-        }
-        document.getElementById('inputArea').value = out;
-        document.getElementById('outputArea').value = '';
-        document.getElementById('reportArea').value = '';
-        setStatus('✓ 已交换，可继续处理', 'success');
-    }
-
-    // [修复5] 复制结果：移除已废弃的 document.execCommand('copy')，降级方案改为全选提示
-    function copyResult() {
-        const content = document.getElementById('outputArea').value;
-        if (!content) {
-            setStatus('❌ 没有可复制的内容', 'error');
-            return;
-        }
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(content).then(() => {
-                setStatus(`📋 已复制到剪贴板 (共${content.length}字符)`, 'success');
-            }).catch(() => {
-                fallbackSelectCopy();
-            });
+    function processIndentCode() {
+      indentRunCounter++;
+      const text = document.getElementById('indentInputArea').value;
+      if (!text.trim()) { setIndentStatus('❌ 请输入代码内容', 'error'); return; }
+      const mode = document.querySelector('input[name="indentMode"]:checked').value;
+      const selectChoice = document.getElementById('indentChoice').value;
+      const indentChar = selectChoice === 'CUSTOM' ? (document.getElementById('customChar').value || '    ') : selectChoice;
+      const level = parseInt(document.getElementById('indentLevel').value, 10) || 1;
+      let result = text;
+      let report = '';
+      let successMsg = '';
+      try {
+        if (mode === 'smart_indent') {
+          const res = smartIndent(text, indentChar, level, true, true);
+          result = res.result; report = res.report; successMsg = '智能缩进处理完成';
+        } else if (mode === 'all_indent') {
+          const lines = text.split('\n');
+          const indentStr = indentChar.repeat(level);
+          let added = 0;
+          result = lines.map(l => { if (l.trim()) { added++; return indentStr + l; } return l; }).join('\n');
+          if (text.endsWith('\n') && !result.endsWith('\n')) result += '\n';
+          report = `所有非空行都在原有基础上增加了缩进（共${added}行）`;
+          successMsg = '全部缩进完成';
+        } else if (mode === 'reduce_indent') {
+          const res = reduceIndent(text, indentChar, level);
+          result = res.result; report = res.report; successMsg = '减少缩进完成';
         } else {
-            fallbackSelectCopy();
+          const res = smartIndent(text, indentChar, level, false, false);
+          result = res.result; report = res.report; successMsg = '替换式缩进完成';
         }
+        document.getElementById('indentOutputArea').value = result;
+        document.getElementById('indentReportArea').value = report;
+        setIndentStatus(`✓ ${successMsg} (运行#${indentRunCounter})`, 'success');
+      } catch (error) {
+        setIndentStatus(`❌ 处理出错: ${error.message}`, 'error');
+      }
     }
 
-    function fallbackSelectCopy() {
-        // Clipboard API 不可用时，全选输出区内容，提示用户手动复制
-        const outputArea = document.getElementById('outputArea');
-        outputArea.removeAttribute('readonly');
-        outputArea.focus();
-        outputArea.select();
-        outputArea.setSelectionRange(0, outputArea.value.length);
-        outputArea.setAttribute('readonly', '');
-        setStatus('⚠ 请手动按 Ctrl+C / Cmd+C 复制已选中内容', 'warn');
+    function clearIndentAll() {
+      document.getElementById('indentInputArea').value = '';
+      document.getElementById('indentOutputArea').value = '';
+      document.getElementById('indentReportArea').value = '';
+      setIndentStatus('✓ 已清除所有内容', 'success');
     }
 
-    // [修复7] 修复编码：结果写入输出区而非覆盖原始输入，保留原文可对比/撤销
-    function fixEncoding() {
-        const inputArea  = document.getElementById('inputArea');
-        const outputArea = document.getElementById('outputArea');
-
-        // 优先对输出区内容修复，其次对输入区
-        const source = outputArea.value.trim() ? outputArea.value : inputArea.value;
-        if (!source.trim()) {
-            setStatus('❌ 没有可修复的内容', 'error');
-            return;
-        }
-
-        const res = autoFixEncoding(source);
-        if (res.changed) {
-            // 将结果写入输出区，原始内容保持不变，方便对比
-            outputArea.value = res.text;
-            setStatus(`✓ 编码修复成功（结果已写入输出区）: ${res.reason}`, 'success');
-        } else {
-            setStatus(`ℹ️ 编码检查: ${res.reason}`, 'warn');
-        }
+    function swapIndentText() {
+      const out = document.getElementById('indentOutputArea').value;
+      if (!out.trim()) { setIndentStatus('⚠ 输出区为空，无法交换', 'warn'); return; }
+      document.getElementById('indentInputArea').value = out;
+      document.getElementById('indentOutputArea').value = '';
+      document.getElementById('indentReportArea').value = '';
+      setIndentStatus('✓ 已交换，可继续处理', 'success');
     }
-</script>
+
+    function copyIndentResult() {
+      const content = document.getElementById('indentOutputArea').value;
+      if (!content) { setIndentStatus('❌ 没有可复制的内容', 'error'); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(content).then(() => {
+          setIndentStatus(`📋 已复制到剪贴板 (共${content.length}字符)`, 'success');
+        }).catch(fallbackSelectIndentCopy);
+      } else {
+        fallbackSelectIndentCopy();
+      }
+    }
+
+    function fallbackSelectIndentCopy() {
+      const outputArea = document.getElementById('indentOutputArea');
+      outputArea.removeAttribute('readonly');
+      outputArea.focus();
+      outputArea.select();
+      outputArea.setSelectionRange(0, outputArea.value.length);
+      outputArea.setAttribute('readonly', '');
+      setIndentStatus('⚠ 请手动按 Ctrl+C / Cmd+C 复制已选中内容', 'warn');
+    }
+
+    function fixIndentEncoding() {
+      const inputArea = document.getElementById('indentInputArea');
+      const outputArea = document.getElementById('indentOutputArea');
+      const source = outputArea.value.trim() ? outputArea.value : inputArea.value;
+      if (!source.trim()) { setIndentStatus('❌ 没有可修复的内容', 'error'); return; }
+      const res = autoFixEncoding(source);
+      if (res.changed) {
+        outputArea.value = res.text;
+        setIndentStatus(`✓ 编码修复成功（结果已写入输出区）: ${res.reason}`, 'success');
+      } else {
+        setIndentStatus(`ℹ️ 编码检查: ${res.reason}`, 'warn');
+      }
+    }
+  </script>
 </body>
 </html>
